@@ -8,6 +8,7 @@ from enum import Enum
 
 import base58
 import requests
+from dotenv import load_dotenv
 from hexbytes import HexBytes
 
 from config.constants import BLOCKCHAIN_IDS, TOKEN_PRICING_SUPPORTED_BLOCKCHAINS, Bridge
@@ -40,19 +41,133 @@ def load_solana_api_key() -> str:
         raise ValueError("SOLANA_API_KEY environment variable not set.")
     return key
 
-
-def get_block_by_timestamp(timestamp: int, blockchain: str) -> int:
-    chain_id = get_blockchain_evm_id(blockchain)
-
-    url = f"https://api.findblock.xyz/v1/chain/{chain_id}/block/before/{timestamp}"
-    response = requests.get(url)
+def get_block_by_timestamp_explorer(url_template: str, result_key: str) -> int:
+    response = requests.get(url_template)
 
     if response.status_code == 200:
         data = response.json()
-        return data["number"]
+        return int(data[result_key])
     else:
-        raise Exception(f"Error fetching {blockchain} block with timestamp {timestamp}.")
+        raise Exception(f"Error fetching block with timestamp from {url_template}.")
 
+def get_block_by_timestamp(timestamp: int, blockchain: str, rpc_get_block: callable) -> int:
+    chain_id = get_blockchain_evm_id(blockchain)
+
+    #! WARNING: An etherscan API key is required for this function to work. 
+    #! Make sure to set the ETHERSCAN_API_KEY environment variable in the .env file.
+    load_dotenv()
+    etherscan_api_key = os.getenv("ETHERSCAN_API_KEY")
+
+    services = [
+        { 
+            "url": f"https://api.findblock.xyz/v1/chain/{chain_id}/block/before/{timestamp}", 
+            "result_key": "number" 
+        },
+        { 
+            "url": f"https://api.etherscan.io/v2/api?chainid={chain_id}&module=block" + 
+                   f"&action=getblocknobytime&timestamp={timestamp}&closest=before" + 
+                   f"&apikey={etherscan_api_key}", 
+            "result_key": "result"
+        },
+        { 
+            "url": f"https://coins.llama.fi/block/{blockchain}/{timestamp}", 
+            "result_key": "height"
+        }
+    ]
+
+    for service in services:
+        try:
+            return get_block_by_timestamp_explorer(service["url"], service["result_key"])
+        except Exception as _:
+            # Try the next service if the current one fails
+            pass
+
+    # If all services fail, call the fallback function (e.g., binary search using RPC)
+    return search_block_by_timestamp(timestamp, blockchain, rpc_get_block)
+
+def search_block_by_timestamp(timestamp: int, blockchain: str, rpc_get_block: callable) -> int:
+        """
+        This function performs a binary search to find the block number closest to a timestamp.
+        It starts by getting the latest block and the block from 2000 blocks ago to calculate
+        the average block time, and then iteratively narrows down the search 
+        until it finds a block with a timestamp close to the target timestamp.
+        """
+        # Step 1: Get the latest block number (x) and its timestamp
+        current_block = rpc_get_block(blockchain, full_transactions=False)
+        current_block_number = int(current_block["number"], 16)
+        current_block_timestamp = int(current_block["timestamp"], 16)
+        if current_block_timestamp < timestamp:
+            raise Exception(f"Error: Target timestamp {timestamp} is in the future compared to "+
+                            f"the latest block timestamp {current_block_timestamp}.")
+
+        # Step 2: Get the timestamp of the block (x - 2000) and calculate the average block time
+        block_2000 = rpc_get_block(blockchain, hex(current_block_number - 2000), 
+                                   full_transactions=False)
+        block_2000_timestamp = int(block_2000["timestamp"], 16)
+        average_block_time = (current_block_timestamp - block_2000_timestamp) / 2000
+
+        # Define a tolerance level for how close the block timestamp should be to the target
+        # Smaller tolerances means less requests in the final iterative phase, 
+        # but are more likely to cause infinite loops during binary search
+        tolerance = average_block_time * 2 # Double the rate value to avoid infinite loops
+
+        last_used_number = current_block_number
+        last_used_timestamp = current_block_timestamp
+        last_estimated_number = current_block_number - 2000
+        last_estimated_timestamp = block_2000_timestamp
+
+        # Step 3: Perform a binary search to find the block number with a timestamp 
+        # close to the target timestamp
+        while abs(last_estimated_timestamp - timestamp) > tolerance:
+            # Recalculate average block time if needed
+            if abs(last_used_timestamp - last_estimated_timestamp) > tolerance:
+                average_block_time = abs(last_used_timestamp - last_estimated_timestamp) \
+                                     / abs(last_used_number - last_estimated_number)
+                tolerance = average_block_time * 2 # Double the rate value to avoid infinite loops
+                
+            last_used_number = last_estimated_number
+            last_used_timestamp = last_estimated_timestamp
+
+            # Get new estimated block number
+            last_estimated_number = last_used_number \
+                                    + int((timestamp - last_used_timestamp) / average_block_time)
+            if last_estimated_number < 1:
+                last_estimated_number = 1
+            elif last_estimated_number > current_block_number:
+                last_estimated_number = current_block_number
+            last_estimated_block = rpc_get_block(blockchain, hex(last_estimated_number), 
+                                                 full_transactions=False)
+            last_estimated_timestamp = int(last_estimated_block["timestamp"], 16)
+            print(f"Binary search: Estimated block: {last_estimated_number}, " + 
+                  f"timestamp: {last_estimated_timestamp}, target timestamp: {timestamp}")
+
+        # Step 4: Adjust the estimated block number based on the timestamp comparison
+        if last_estimated_timestamp < timestamp:
+            while last_estimated_timestamp < timestamp:
+                last_estimated_number += 1
+                last_estimated_block = rpc_get_block(blockchain, hex(last_estimated_number), 
+                                                     full_transactions=False)
+                last_estimated_timestamp = int(last_estimated_block["timestamp"], 16)
+                print(f"Iterative search: Estimated block: {last_estimated_number}, " + 
+                      f"timestamp: {last_estimated_timestamp}, target timestamp: {timestamp}")
+
+            # Result is the block before the target timestamp
+            last_estimated_number -= 1
+
+        elif last_estimated_timestamp > timestamp:
+            while last_estimated_timestamp > timestamp and last_estimated_number > 1:
+                last_estimated_number -= 1
+                last_estimated_block = rpc_get_block(blockchain, hex(last_estimated_number), 
+                                                     full_transactions=False)
+                last_estimated_timestamp = int(last_estimated_block["timestamp"], 16)
+                print(f"Iterative search: Estimated block: {last_estimated_number}, " + 
+                      f"timestamp: {last_estimated_timestamp}, target timestamp: {timestamp}")
+
+
+        # Result is the block before the target timestamp
+        print(f"Result: Estimated block: {last_estimated_number}, " + 
+              f"timestamp: {last_estimated_timestamp}, target timestamp: {timestamp}")
+        return last_estimated_number
 
 def get_blockchain_evm_id(blockchain: str) -> str:
     for chain_id in BLOCKCHAIN_IDS:

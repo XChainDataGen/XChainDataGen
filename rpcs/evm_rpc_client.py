@@ -113,9 +113,10 @@ class EvmRPCClient(RPCClient):
 
         return response["result"] if response else {}
 
-    def get_block(self, blockchain: str, block_number: str) -> dict:
+    def get_block(self, blockchain: str, block_number: str = "latest", 
+                  full_transactions: bool = True) -> dict:
         method = "eth_getBlockByNumber"
-        params = [block_number, True]
+        params = [block_number, full_transactions]
 
         rpc = self.get_next_rpc(blockchain)
         response = self.make_request(rpc, blockchain, method, params)
