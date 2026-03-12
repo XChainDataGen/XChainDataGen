@@ -47,22 +47,20 @@ class Cli:
                     blockchains,
                 )
             else:
-                start_block = get_block_by_timestamp(args.start_ts, blockchain)
-                end_block = get_block_by_timestamp(args.end_ts, blockchain)
                 Cli.extract_evm_data(
                     idx,
                     bridge,
                     blockchain,
-                    start_block,
-                    end_block,
+                    args.start_ts,
+                    args.end_ts,
                     blockchains,
                 )
 
-    def extract_evm_data(idx, bridge, blockchain, start_block, end_block, blockchains):
+    def extract_evm_data(idx, bridge, blockchain, start_ts, end_ts, blockchains):
         log_to_cli(
             build_log_message_2(
-                start_block,
-                end_block,
+                start_ts,
+                end_ts,
                 bridge,
                 blockchain,
                 f"{idx + 1}/{len(blockchains)} Starting extraction... ",
@@ -72,20 +70,30 @@ class Cli:
         try:
             log_to_cli(
                 build_log_message_2(
-                    start_block,
-                    end_block,
+                    start_ts,
+                    end_ts,
                     bridge,
                     blockchain,
                     "Loading contracts and ABIs...",
                 )
             )
             extractor = EvmExtractor(bridge, blockchain, blockchains)
+            start_block = get_block_by_timestamp(
+                int(start_ts), 
+                blockchain, 
+                extractor.rpc_client.get_block
+            )
+            end_block = get_block_by_timestamp(
+                int(end_ts), 
+                blockchain, 
+                extractor.rpc_client.get_block
+            )
 
         except Exception as e:
             log_to_cli(
                 build_log_message_2(
-                    start_block,
-                    end_block,
+                    start_ts,
+                    end_ts,
                     bridge,
                     blockchain,
                     f"{idx + 1}/{len(blockchains)} Error: {e}",
