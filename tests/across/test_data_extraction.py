@@ -16,26 +16,26 @@ def test_extract_data():
     # now we can check if the data was extracted correctly
     # For example, we can check if the AcrossFundsDeposited table has been populated
     from repository.across.repository import (
-        AcrossFilledV3RelayRepository,
+        AcrossFilledRelayRepository,
+        AcrossFundsDepositedRepository,
         AcrossRelayerRefundRepository,
-        AcrossV3FundsDepositedRepository,
     )
     from repository.database import DBSession
 
-    across_v3_funds_deposited = AcrossV3FundsDepositedRepository(DBSession)
-    across_filled_v3_relay_repo = AcrossFilledV3RelayRepository(DBSession)
+    across_funds_deposited = AcrossFundsDepositedRepository(DBSession)
+    across_filled_relay_repo = AcrossFilledRelayRepository(DBSession)
     across_relayer_refund_repo = AcrossRelayerRefundRepository(DBSession)
 
-    events = across_v3_funds_deposited.get_all()
+    events = across_funds_deposited.get_all()
     print(f"Number of events in AcrossFundsDeposited: {len(events)}")
     assert len(events) == 911, (
-        "Expected 911 events in AcrossV3FundsDepositedRepository table after extraction."
+        "Expected 911 events in AcrossFundsDepositedRepository table after extraction."
     )
 
-    events = across_filled_v3_relay_repo.get_all()
-    print(f"Number of events in AcrossFilledV3Relay: {len(events)}")
+    events = across_filled_relay_repo.get_all()
+    print(f"Number of events in AcrossFilledRelay: {len(events)}")
     assert len(events) == 912, (
-        "Expected 912 events in AcrossFilledV3RelayRepository table after extraction."
+        "Expected 912 events in AcrossFilledRelayRepository table after extraction."
     )
 
     events = across_relayer_refund_repo.get_all()
