@@ -139,9 +139,9 @@ class Cli:
             help="Name of the bridge to analyze",
         )
         extract_parser.add_argument(
-            "--start_ts", required=True, help="Start timestamp for extraction"
+            "--start_ts", required=True, type=int, help="Start timestamp for extraction"
         )
-        extract_parser.add_argument("--end_ts", required=True, help="End timestamp for extraction")
+        extract_parser.add_argument("--end_ts", required=True, type=int, help="End timestamp for extraction")
         extract_parser.add_argument(
             "--blockchains",
             choices=[

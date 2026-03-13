@@ -122,3 +122,12 @@ class EvmRPCClient(RPCClient):
         response = self.make_request(rpc, blockchain, method, params)
 
         return response["result"] if response else {}
+    
+    def get_current_block_number(self, blockchain: str) -> int:
+        method = "eth_blockNumber"
+        params = []
+
+        rpc = self.get_next_rpc(blockchain)
+        response = self.make_request(rpc, blockchain, method, params)
+
+        return int(response["result"], 16) if response else None
