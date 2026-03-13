@@ -5,6 +5,7 @@ from enum import Enum
 class Bridge(Enum):
     STARGATE = "stargate"
     CCTP = "cctp"
+    CCTP_V2 = "cctp_v2"
     CCIP = "ccip"
     ACROSS = "across"
     POLYGON = "polygon"
@@ -112,6 +113,7 @@ TOKEN_PRICING_SUPPORTED_BLOCKCHAINS = {
 BRIDGE_NEEDS_TRANSACTION_BY_HASH_RPC_METHOD = {
     Bridge.STARGATE: False,
     Bridge.CCTP: False,
+    Bridge.CCTP_V2: False,
     Bridge.CCIP: False,
     Bridge.ACROSS: False,
     Bridge.POLYGON: False,
