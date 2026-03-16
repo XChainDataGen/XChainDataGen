@@ -74,7 +74,7 @@ BLOCKCHAIN_IDS = {
         "native_token": "WETH",
         "native_token_contract": "0x4200000000000000000000000000000000000006",
     },
-    "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d": { # genesis hash for Solana
+    "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d": {  # genesis hash for Solana
         "name": "solana",
         "native_token": "SOL",
     },
@@ -131,3 +131,5 @@ BRIDGE_NEEDS_TRANSACTION_BY_HASH_RPC_METHOD = {
 RPCS_CONFIG_FILE = "config/rpcs_config.yaml"
 
 MAX_NUM_THREADS_EXTRACTOR = 10
+
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"

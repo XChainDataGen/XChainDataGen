@@ -86,6 +86,13 @@ class BridgeDecoder:
                 f"Error registering contract {contract_addr}: {e}",
             ) from e
 
+    def ensure_contract_registered(self, contract_addr: str, blockchain: str, abi_filename: str):
+        if (contract_addr, blockchain) in self.contracts:
+            return
+
+        abi = load_abi(os.path.dirname(__file__), self.bridge, blockchain, abi_filename)
+        self.register_contract(contract_addr, blockchain, abi)
+
     def decode_log(self, contract: Contract, result: Dict[str, Any]):
         """
         whenever possible we try to use the default (and general) decoder. Whenever events

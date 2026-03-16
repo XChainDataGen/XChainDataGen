@@ -78,55 +78,22 @@ BRIDGE_CONFIG = {
                     "0xebff2602b3f468259e1e99f613fed6691f3a6526effe6ef3e768ba7ae7a36c4f",  # Withdraw
                 ],
             },
-            # {
-            #     we will need to listen to the Transfer events in the most used ERC20 contracts. below is a preliminary list
-            # }
-            # {
-            #     "abi": "erc20",
-            #     "contracts": [
-            #         "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
-            #         "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
-            #         "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
-            #         "	0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
-            #         "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
-            #         "0x467bccd9d29f223bce8043b84e8c8b282827790f",
-            #         "0x25f8087ead173b73d6e8b84329989a8eea16cf73",
-            #         "0x423071774c43c0aaf4210b439e7cda8c797e2f26",
-            #         "0x0001a500a6b18995b03f44bb040a5ffc28e45cb0",
-            #         "0x514910771af9ca656af840dff83e8264ecf986ca",
-            #         "0x3845badade8e6dff049820680d1f14bd3903a5d0",
-            #         "0x5b649c07e7ba0a1c529deaabed0b47699919b4a2",
-            #         "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
-            #         "0x5a98fcbea516cf06857215779fd812ca3bef1b32",
-            #         "0x3593d125a4f7849a1b059e64f4517a86dd60c95d",
-            #         "0xba100000625a3754423978a60c9317c58a424e3d",
-            #         "0x967da4048cd07ab37855c090aaf366e4ce1b9f48",
-            #         "0xb17548c7b510427baac4e267bea62e800b247173",
-            #         "0x6de037ef9ad2725eb40118bb1702ebb27e4aeb24",
-            #         "0x111111517e4929d3dcbdfa7cce55d30d4b6bc4d6",
-            #         "0x55296f69f40ea6d20e478533c15a6b08b654e758",
-            #         "0x249e38ea4102d0cf8264d3701f1a0e39c4f2dc3b",
-            #         "0x340d2bde5eb28c1eed91b2f790723e3b160613b7",
-            #         "0xd3e4ba569045546d09cf021ecc5dfe42b1d7f6e4",
-            #         "0xe0bceef36f3a6efdd5eebfacd591423f8549b9d5",
-            #         "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
-            #         "0xd7d9babf56a66daff2ac5dc96f7e886c05124676",
-            #         "0xc477d038d5420c6a9e0b031712f61c5120090de9",
-            #         "0x6f40d4a6237c257fff2db00fa0510deeecd303eb",
-            #         "0x9f9c8ec3534c3ce16f928381372bfbfbfb9f4d24",
-            #         "0xe53ec727dbdeb9e2d5456c3be40cff031ab40a55",
-            #         "0x4104b135dbc9609fc1a9490e61369036497660c8",
-            #         "0x6b0b3a982b4634ac68dd83a4dbf02311ce324181",
-            #         "0x7dd9c5cba05e151c895fde1cf355c9a1d5da6429",
-            #         "0x06f3c323f0238c72bf35011071f2b5b7f43a054c",
-            #         "0xb705268213d593b8fd88d3fdeff93aff5cbdcfae",
-            #         "0x21bfbda47a0b4b5b1248c767ee49f7caa9b23697",
-            #         "0xc28eb2250d1ae32c7e74cfb6d6b86afc9beb6509",
-            #     ],
-            #     "topics": [
-            #         "", # Transfer
-            #     ],
-            # },
+            {
+                "abi": "erc20",
+                "contracts": [
+                    # Filled dynamically from Ethereum exit root-token mappings.
+                ],
+                "topics": [
+                    "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",  # Transfer
+                    None,
+                    "0x0000000000000000000000000000000000000000000000000000000000000000",
+                ],
+            },
         ],
     }
 }
+
+ETHER_ROOT_TOKEN = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+ROOT_CHAIN_MANAGER = "0xA0c68C638235ee32657e8f720a23ceC1bFc77C77"
+ROOT_TO_CHILD_TOKEN_SELECTOR = "0xea60c7c4"
+TOPIC_ADDRESS_CHUNK_SIZE = 100

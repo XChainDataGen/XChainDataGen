@@ -112,6 +112,48 @@ class PolygonExitedToken(Base):
         )
 
 
+class PolygonChildTokenBurn(Base):
+    __tablename__ = "polygon_child_token_burn"
+
+    id = Column(Integer, nullable=False, autoincrement=True, primary_key=True)
+    blockchain = Column(String(10), nullable=False)
+    transaction_hash = Column(String(66), nullable=False)
+    log_index = Column(Integer, nullable=False)
+    root_token = Column(String(42), nullable=True)
+    child_token = Column(String(42), nullable=False)
+    from_address = Column(String(42), nullable=False)
+    amount = Column(Numeric(78, 0), nullable=False)
+
+    def __init__(
+        self,
+        blockchain,
+        transaction_hash,
+        log_index,
+        child_token,
+        from_address,
+        amount,
+        root_token=None,
+    ):
+        self.blockchain = blockchain
+        self.transaction_hash = transaction_hash
+        self.log_index = log_index
+        self.root_token = root_token
+        self.child_token = child_token
+        self.from_address = from_address
+        self.amount = amount
+
+    def __repr__(self):
+        return (
+            f"<PolygonChildTokenBurn {self.blockchain}, "
+            f"{self.transaction_hash}, "
+            f"{self.log_index}, "
+            f"{self.root_token}, "
+            f"{self.child_token}, "
+            f"{self.from_address}, "
+            f"{self.amount}>"
+        )
+
+
 class PolygonNewDepositBlock(Base):
     __tablename__ = "polygon_new_deposit_block"
 

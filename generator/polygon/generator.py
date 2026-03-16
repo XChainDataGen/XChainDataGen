@@ -54,6 +54,7 @@ class PolygonGenerator(BaseGenerator):
 
         try:
             self.pos_bridge_match_deposits()
+            self.pos_bridge_match_withdrawals()
             self.plasma_bridge_match_deposits()
 
             start_ts = int(self.transactions_repo.get_min_timestamp()) - 86400
@@ -181,21 +182,21 @@ class PolygonGenerator(BaseGenerator):
                 src_tx.from_address AS src_from_address,
                 src_tx.to_address AS src_to_address,
                 src_tx.fee AS src_fee,
-                NULL AS src_fee_usd,
+                NULL::double precision AS src_fee_usd,
                 src_tx.timestamp AS src_timestamp,
                 dst_tx.blockchain AS dst_blockchain,
                 dst_tx.transaction_hash AS dst_tx_hash,
                 dst_tx.from_address AS dst_from_address,
                 dst_tx.to_address AS dst_to_address,
                 dst_tx.fee AS dst_fee,
-                NULL AS dst_fee_usd,
+                NULL::double precision AS dst_fee_usd,
                 dst_tx.timestamp AS dst_timestamp,
                 deposit.id AS deposit_id,
                 deposit.depositor AS depositor,
                 deposit.deposit_receiver AS recipient,
                 deposit.root_token AS src_contract_address,
                 deposit.amount AS src_amount,
-                NULL AS src_amount_usd
+                NULL::double precision AS src_amount_usd
             FROM polygon_locked_token deposit
             JOIN polygon_state_synced deposit_state ON deposit_state.transaction_hash = deposit.transaction_hash
             JOIN polygon_blockchain_transactions src_tx ON deposit.transaction_hash = src_tx.transaction_hash
@@ -225,6 +226,121 @@ class PolygonGenerator(BaseGenerator):
                 self.CLASS_NAME,
                 func_name,
                 f"Error processing token transfers. Error: {e}",
+            ) from e
+
+    def pos_bridge_match_withdrawals(self):
+        func_name = "pos_bridge_match_withdrawals"
+
+        start_time = time.time()
+        log_to_cli(
+            build_log_message_generator(
+                self.bridge, "Matching PoS Bridge cross-chain withdrawals..."
+            )
+        )
+
+        query = text(
+            """
+            INSERT INTO polygon_cross_chain_transactions (
+                src_blockchain,
+                src_transaction_hash,
+                src_from_address,
+                src_to_address,
+                src_fee,
+                src_fee_usd,
+                src_timestamp,
+                dst_blockchain,
+                dst_transaction_hash,
+                dst_from_address,
+                dst_to_address,
+                dst_fee,
+                dst_fee_usd,
+                dst_timestamp,
+                deposit_id,
+                depositor,
+                recipient,
+                src_contract_address,
+                amount,
+                amount_usd
+            )
+            SELECT
+                src_blockchain,
+                src_transaction_hash,
+                src_from_address,
+                src_to_address,
+                src_fee,
+                src_fee_usd,
+                src_timestamp,
+                dst_blockchain,
+                dst_transaction_hash,
+                dst_from_address,
+                dst_to_address,
+                dst_fee,
+                dst_fee_usd,
+                dst_timestamp,
+                deposit_id,
+                depositor,
+                recipient,
+                src_contract_address,
+                amount,
+                amount_usd
+            FROM (
+                SELECT DISTINCT ON (exit.id)
+                    src_tx.blockchain AS src_blockchain,
+                    burn.transaction_hash AS src_transaction_hash,
+                    src_tx.from_address AS src_from_address,
+                    src_tx.to_address AS src_to_address,
+                    src_tx.fee AS src_fee,
+                    NULL::double precision AS src_fee_usd,
+                    src_tx.timestamp AS src_timestamp,
+                    dst_tx.blockchain AS dst_blockchain,
+                    exit.transaction_hash AS dst_transaction_hash,
+                    dst_tx.from_address AS dst_from_address,
+                    dst_tx.to_address AS dst_to_address,
+                    dst_tx.fee AS dst_fee,
+                    NULL::double precision AS dst_fee_usd,
+                    dst_tx.timestamp AS dst_timestamp,
+                    burn.id::VARCHAR AS deposit_id,
+                    burn.from_address AS depositor,
+                    exit.exitor AS recipient,
+                    burn.child_token AS src_contract_address,
+                    burn.amount AS amount,
+                    NULL::double precision AS amount_usd
+                FROM polygon_exited_token exit
+                JOIN polygon_blockchain_transactions dst_tx
+                    ON dst_tx.transaction_hash = exit.transaction_hash
+                JOIN polygon_child_token_burn burn
+                    ON burn.from_address = exit.exitor
+                    AND burn.root_token = exit.root_token
+                    AND burn.amount = exit.amount
+                JOIN polygon_blockchain_transactions src_tx
+                    ON src_tx.transaction_hash = burn.transaction_hash
+                WHERE src_tx.timestamp <= dst_tx.timestamp
+                ORDER BY exit.id, src_tx.timestamp DESC
+            ) matched_withdrawals;
+        """  # noqa: E501
+        )
+
+        try:
+            self.pos_bridge_cross_chain_transactions_repo.execute(query)
+
+            size = self.pos_bridge_cross_chain_transactions_repo.get_number_of_records()
+
+            end_time = time.time()
+            log_to_cli(
+                build_log_message_generator(
+                    self.bridge,
+                    (
+                        f"Withdrawals matched in {end_time - start_time} seconds. "
+                        f"Total PoS records inserted: {size}",
+                    ),
+                ),
+                CliColor.SUCCESS,
+            )
+        except Exception as e:
+            raise CustomException(
+                self.CLASS_NAME,
+                func_name,
+                f"Error processing withdrawals. Error: {e}",
             ) from e
 
     def plasma_bridge_match_deposits(self):

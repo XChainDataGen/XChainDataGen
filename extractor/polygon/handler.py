@@ -1,12 +1,20 @@
+from collections import defaultdict
 from typing import Any, Dict, List
 
-from config.constants import Bridge
+from config.constants import ZERO_ADDRESS, Bridge
 from extractor.base_handler import BaseHandler
-from extractor.polygon.constants import BRIDGE_CONFIG
+from extractor.polygon.constants import (
+    BRIDGE_CONFIG,
+    ETHER_ROOT_TOKEN,
+    ROOT_CHAIN_MANAGER,
+    ROOT_TO_CHILD_TOKEN_SELECTOR,
+    TOPIC_ADDRESS_CHUNK_SIZE,
+)
 from repository.database import DBSession
 from repository.polygon.repository import (
     PolygonBlockchainTransactionRepository,
     PolygonBridgeWithdrawRepository,
+    PolygonChildTokenBurnRepository,
     PolygonExitedTokenRepository,
     PolygonLockedTokenRepository,
     PolygonNewDepositBlockRepository,
@@ -25,6 +33,7 @@ class PolygonHandler(BaseHandler):
     def __init__(self, rpc_client: EvmRPCClient, blockchains: list) -> None:
         super().__init__(rpc_client, blockchains)
         self.bridge = Bridge.POLYGON
+        self._root_to_child_token_cache = {}
 
     def get_bridge_contracts_and_topics(self, bridge: str, blockchain: List[str]) -> None:
         """
@@ -38,13 +47,109 @@ class PolygonHandler(BaseHandler):
         if blockchain not in BRIDGE_CONFIG["blockchains"]:
             raise ValueError(f"Blockchain {blockchain} not supported for bridge {bridge}.")
 
-        return BRIDGE_CONFIG["blockchains"][blockchain]
+        config = BRIDGE_CONFIG["blockchains"][blockchain]
+        if blockchain == "polygon":
+            config = self._replace_static_erc20_burn_contracts(config)
+
+        return config
+
+    def _replace_static_erc20_burn_contracts(self, config):
+        dynamic_config = []
+
+        for pair in config:
+            if pair["abi"] != "erc20":
+                dynamic_config.append(pair)
+                continue
+
+            dynamic_config.extend(self._build_child_token_burn_pairs(pair["topics"]))
+
+        return dynamic_config
+
+    def _build_child_token_burn_pairs(self, topics):
+        root_token_exitors = self.exited_token_repo.get_distinct_root_token_exitors()
+        if not root_token_exitors:
+            return []
+
+        if "ethereum" not in self.rpc_client.rpc_mapping:
+            log_error(
+                self.bridge,
+                "Skipping Polygon child-token burn extraction: Ethereum RPC config is unavailable.",
+            )
+            return []
+
+        root_to_exitors = defaultdict(set)
+        for root_token, exitor in root_token_exitors:
+            if root_token and exitor:
+                root_to_exitors[root_token.lower()].add(exitor.lower())
+
+        root_token_mappings = []
+        for root_token, exitors in root_to_exitors.items():
+            child_token = self._resolve_child_token(root_token.lower())
+            if child_token is None:
+                continue
+
+            root_token_mappings.append((root_token, child_token, exitors))
+
+        burn_pairs = []
+        for root_token, child_token, exitors in sorted(root_token_mappings):
+            exitor_topics = [self._address_to_topic(exitor) for exitor in sorted(exitors)]
+            for exitor_topic_chunk in self._chunk(exitor_topics, TOPIC_ADDRESS_CHUNK_SIZE):
+                burn_pairs.append(
+                    {
+                        "abi": "erc20",
+                        "contracts": [child_token],
+                        "topics": [
+                            topics[0],
+                            exitor_topic_chunk,
+                            topics[2],
+                        ],
+                        "root_token": root_token,
+                    }
+                )
+
+        return burn_pairs
+
+    def _resolve_child_token(self, root_token):
+        if root_token in self._root_to_child_token_cache:
+            return self._root_to_child_token_cache[root_token]
+
+        try:
+            data = ROOT_TO_CHILD_TOKEN_SELECTOR + root_token[2:].rjust(64, "0")
+            result = self.rpc_client.eth_call("ethereum", ROOT_CHAIN_MANAGER, data)
+            child_token = self._decode_address_result(result)
+            self._root_to_child_token_cache[root_token] = child_token
+            return child_token
+        except Exception as e:
+            self._root_to_child_token_cache[root_token] = None
+            log_error(
+                self.bridge,
+                f"Could not resolve Polygon child token for root token {root_token}: {e}",
+            )
+            return None
+
+    def _decode_address_result(self, result):
+        if not result or result == "0x":
+            return None
+
+        child_token = "0x" + result[-40:]
+        if child_token.lower() == ZERO_ADDRESS:
+            return None
+
+        return child_token.lower()
+
+    def _address_to_topic(self, address):
+        return "0x" + address[2:].rjust(64, "0")
+
+    def _chunk(self, values, chunk_size):
+        for i in range(0, len(values), chunk_size):
+            yield values[i : i + chunk_size]
 
     def bind_db_to_repos(self):
         self.state_synced_repo = PolygonStateSyncedRepository(DBSession)
         self.state_committed_repo = PolygonStateCommittedRepository(DBSession)
         self.locked_token_repo = PolygonLockedTokenRepository(DBSession)
         self.exited_token_repo = PolygonExitedTokenRepository(DBSession)
+        self.child_token_burn_repo = PolygonChildTokenBurnRepository(DBSession)
         self.new_deposit_block_repo = PolygonNewDepositBlockRepository(DBSession)
         self.token_deposited_repo = PolygonTokenDepositedRepository(DBSession)
         self.pol_withdraw_repo = PolygonPOLWithdrawRepository(DBSession)
@@ -145,6 +250,11 @@ class PolygonHandler(BaseHandler):
                     == "0xebff2602b3f468259e1e99f613fed6691f3a6526effe6ef3e768ba7ae7a36c4f"
                 ):  # Withdraw
                     event = self.handle_pol_withdraw(blockchain, event)
+                elif (
+                    event["topic"]
+                    == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+                ):  # Transfer (to 0x0)
+                    event = self.handle_child_token_burn(blockchain, event)
 
                 if event:
                     included_events.append(event)
@@ -249,6 +359,44 @@ class PolygonHandler(BaseHandler):
                 f"{blockchain} -- Tx Hash: {event['transaction_hash']}. Error writing to DB: {e}",
             ) from e
 
+    def handle_child_token_burn(self, blockchain, event):
+        func_name = "handle_child_token_burn"
+
+        try:
+            if event["topics_count"] != 3:
+                return None
+
+            if event["to"].lower() != ZERO_ADDRESS:
+                return None
+
+            amount = event.get("value", event.get("amount"))
+            if amount is None:
+                return None
+
+            raw_log_index = event["log_index"]
+            log_index = int(raw_log_index, 16) if isinstance(raw_log_index, str) else raw_log_index
+            if self.child_token_burn_repo.event_exists(event["transaction_hash"], log_index):
+                return None
+
+            self.child_token_burn_repo.create(
+                {
+                    "blockchain": blockchain,
+                    "transaction_hash": event["transaction_hash"],
+                    "log_index": log_index,
+                    "root_token": event.get("root_token"),
+                    "child_token": event["contract_address"].lower(),
+                    "from_address": event["from"].lower(),
+                    "amount": amount,
+                }
+            )
+            return event
+        except Exception as e:
+            raise CustomException(
+                self.CLASS_NAME,
+                func_name,
+                f"{blockchain} -- Tx Hash: {event['transaction_hash']}. Error writing to DB: {e}",
+            ) from e
+
     def handle_locked_ether(self, blockchain, event):
         func_name = "handle_locked_ether"
 
@@ -259,7 +407,7 @@ class PolygonHandler(BaseHandler):
                     "transaction_hash": event["transaction_hash"],
                     "depositor": event["depositor"].lower(),
                     "deposit_receiver": event["depositReceiver"].lower(),
-                    "root_token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                    "root_token": ETHER_ROOT_TOKEN,
                     "amount": event["amount"],
                 }
             )
@@ -280,7 +428,7 @@ class PolygonHandler(BaseHandler):
                     "blockchain": blockchain,
                     "transaction_hash": event["transaction_hash"],
                     "exitor": event["exitor"].lower(),
-                    "root_token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                    "root_token": ETHER_ROOT_TOKEN,
                     "amount": event["amount"],
                 }
             )
