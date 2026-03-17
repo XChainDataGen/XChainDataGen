@@ -3,6 +3,7 @@
         "ccip",
         "cctp",
         "debridge",
+        "dotenv",
         "lamports",
         "levelname",
         "linea",

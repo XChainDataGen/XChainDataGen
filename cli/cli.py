@@ -79,14 +79,10 @@ class Cli:
             )
             extractor = EvmExtractor(bridge, blockchain, blockchains)
             start_block = get_block_by_timestamp(
-                int(start_ts), 
-                blockchain, 
-                extractor.rpc_client.get_block
+                int(start_ts), blockchain, extractor.rpc_client.get_block
             )
             end_block = get_block_by_timestamp(
-                int(end_ts), 
-                blockchain, 
-                extractor.rpc_client.get_block
+                int(end_ts), blockchain, extractor.rpc_client.get_block
             )
 
         except Exception as e:
@@ -139,9 +135,11 @@ class Cli:
             help="Name of the bridge to analyze",
         )
         extract_parser.add_argument(
-            "--start_ts", required=True, help="Start timestamp for extraction"
+            "--start_ts", required=True, type=int, help="Start timestamp for extraction"
         )
-        extract_parser.add_argument("--end_ts", required=True, help="End timestamp for extraction")
+        extract_parser.add_argument(
+            "--end_ts", required=True, type=int, help="End timestamp for extraction"
+        )
         extract_parser.add_argument(
             "--blockchains",
             choices=[

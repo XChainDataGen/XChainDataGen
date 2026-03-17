@@ -18,3 +18,5 @@ analysis/data/
 .env
 
 error_log.log
+
+.idea
