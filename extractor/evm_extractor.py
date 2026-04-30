@@ -89,6 +89,7 @@ class EvmExtractor(Extractor):
         )
 
         for log in included_logs:
+            print(log)
             tx_hash = log["transaction_hash"]
 
             # to avoid processing the same transaction multiple times we ignore if already in the
@@ -100,6 +101,7 @@ class EvmExtractor(Extractor):
                 tx, block = self.rpc_client.process_transaction(
                     self.blockchain, log["transaction_hash"], log["block_number"]
                 )
+                tx["decoded_input"] = self.decoder.decode_input_data(contract, self.blockchain, tx["input"] if "input" in tx else None)
 
                 if tx is None or block is None:
                     raise Exception(tx_hash)
@@ -112,6 +114,7 @@ class EvmExtractor(Extractor):
                 request_desc = (
                     f"Error processing request: {self.blockchain}, {start_block}, {end_block}, "
                     f"{contract}, {topics}. Error: {e}"
+                    f"Failed to decode input data for transaction {tx['to']}"
                 )
                 log_error(self.bridge, request_desc)
 

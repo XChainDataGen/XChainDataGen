@@ -99,6 +99,7 @@ class BaseHandler(ABC):
                     "to_address": None,
                     "status": 1 if tx["meta"]["err"] is not None else 0,
                     "input_data": None,
+                    "decoded_input_data": None,
                     "value": None,
                     "fee": tx["meta"]["fee"],
                 }
@@ -123,6 +124,7 @@ class BaseHandler(ABC):
                     "status": int(tx["status"], 16),
                     "value": int(tx["value"], 16) if "value" in tx else None,
                     "input_data": input_data,
+                    "decoded_input_data": tx["decoded_input"] if "decoded_input" in tx else None,
                     "fee": str(int(tx["gasUsed"], 0) * int(tx["effectiveGasPrice"], 0)),
                 }
         except Exception as e:

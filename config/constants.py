@@ -110,13 +110,13 @@ TOKEN_PRICING_SUPPORTED_BLOCKCHAINS = {
 # case for Mayan Bridge,
 
 BRIDGE_NEEDS_TRANSACTION_BY_HASH_RPC_METHOD = {
-    Bridge.STARGATE: False,
-    Bridge.CCTP: False,
-    Bridge.CCIP: False,
-    Bridge.ACROSS: False,
-    Bridge.POLYGON: False,
-    Bridge.RONIN: False,
-    Bridge.OMNIBRIDGE: False,
+    Bridge.STARGATE: True,
+    Bridge.CCTP: True,
+    Bridge.CCIP: True,
+    Bridge.ACROSS: True,
+    Bridge.POLYGON: True,
+    Bridge.RONIN: True,
+    Bridge.OMNIBRIDGE: True,
     Bridge.DEBRIDGE: True,
     Bridge.MAYAN: True,
 }

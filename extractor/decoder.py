@@ -257,3 +257,37 @@ class BridgeDecoder:
         ]
 
         return [ordered_input_names, ordered_input_types]
+
+    def decode_input_data(self, contract_addr: str, blockchain: str, input_data: str) -> dict | None:
+        func_name = "decode_input_data"
+
+        if not input_data or input_data == "0x":
+            return None
+
+        if (contract_addr, blockchain) not in self.contracts.keys():
+            raise CustomException(
+                self.CLASS_NAME,
+                func_name,
+                f"Contract {contract_addr} not found in contracts list.",
+            )
+
+        try:
+            contract = self.contracts[(contract_addr, blockchain)]
+
+            function, params = contract.decode_function_input(input_data)
+            params = self.convert_bytes_to_hex(params)
+
+            return {
+                "function_name": function.fn_name,
+                "selector": input_data[:10],
+                "args": dict(params),
+            }
+
+        except Exception as e:
+            return {"not_found": True}
+            #raise CustomException(
+            #    self.CLASS_NAME,
+            #    func_name,
+            #    f"Error decoding input data for contract {contract_addr} on {blockchain}. "
+            #    f"input_data={input_data}, error={e}",
+            #) from e
