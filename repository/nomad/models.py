@@ -1,0 +1,162 @@
+from sqlalchemy import BigInteger, Column, Float, Integer, Numeric, String
+
+from repository.common.models import BlockchainTransaction
+from repository.database import Base
+
+
+class NomadRouterSend(Base):
+    __tablename__ = "nomad_router_send"
+
+    id = Column(Integer, nullable=False, autoincrement=True, primary_key=True)
+    blockchain = Column(String(10), nullable=False)
+    transaction_hash = Column(String(66), nullable=False)
+    input_token = Column(String(42), nullable=False)
+    depositor = Column(String(42), nullable=False)
+    dst_blockchain = Column(String(10), nullable=False) 
+    recipient = Column(String(42), nullable=False)
+    amount = Column(Numeric(30, 0), nullable=False)
+    to_hook = Column(Integer, nullable=True)
+    fast_liquidity_enabled = Column(Integer, nullable=True)
+
+class NomadRouterReceive(Base):
+    __tablename__ = "nomad_router_receive"
+
+    id = Column(Integer, nullable=False, autoincrement=True, primary_key=True)
+    blockchain = Column(String(10), nullable=False)
+    transaction_hash = Column(String(66), nullable=False)
+    src_blockchain = Column(String(10), nullable=False)
+    nonce = Column(BigInteger, nullable=False)
+    output_token = Column(String(42), nullable=False)
+    recipient = Column(String(42), nullable=False)
+    liquidity_provider = Column(String(42), nullable=False) # Usually null
+    amount = Column(Numeric(30, 0), nullable=False)
+
+class NomadEthHelperSend(Base):
+    __tablename__ = "nomad_eth_helper_send"
+
+    id = Column(Integer, nullable=False, autoincrement=True, primary_key=True)
+    blockchain = Column(String(10), nullable=False)
+    transaction_hash = Column(String(66), nullable=False)
+    from_address = Column(String(42), nullable=False)
+
+class NomadReplicaProcess(Base):
+    __tablename__ = "nomad_replica_process"
+
+    id = Column(Integer, nullable=False, autoincrement=True, primary_key=True)
+    blockchain = Column(String(10), nullable=False)
+    transaction_hash = Column(String(66), nullable=False)
+    message_hash = Column(String(66), nullable=False)
+    success = Column(Integer, nullable=False)
+    return_data = Column(String, nullable=False)
+
+class NomadHomeDispatch(Base):
+    __tablename__ = "nomad_home_dispatch"
+
+    id = Column(Integer, nullable=False, autoincrement=True, primary_key=True)
+    blockchain = Column(String(10), nullable=False)
+    transaction_hash = Column(String(66), nullable=False)
+    message_hash = Column(String(66), nullable=False)
+    leaf_index = Column(BigInteger, nullable=False)
+    nonce = Column(BigInteger, nullable=False)
+    committed_root = Column(String(66), nullable=False)
+
+    # extracted from message(bytes)
+    src_blockchain = Column(String(10), nullable=False)
+    src_router = Column(String(42), nullable=False)
+    dst_blockchain = Column(String(10), nullable=False)
+    dst_router = Column(String(42), nullable=False)
+
+    token_blockchain = Column(String(10), nullable=False)
+    token_address = Column(String(42), nullable=False)
+    action_type = Column(Integer, nullable=False) # 0 for Transfer, 1 for FastTransfer
+    recipient = Column(String(42), nullable=False)
+    amount = Column(Numeric(30, 0), nullable=False)
+    details_hash = Column(String(66), nullable=False)
+
+class NomadBlockchainTransaction(BlockchainTransaction):
+    __tablename__ = "nomad_blockchain_transactions"
+
+    def __repr__(self):
+        return (
+            f"<NomadBlockchainTransaction(blockchain={self.blockchain}, "
+            f"transaction_hash={self.transaction_hash}, "
+            f"block_number={self.block_number}, "
+            f"timestamp={self.timestamp} from_address={self.from_address}, "
+            f"to_address={self.to_address}, "
+            f"status={self.status})>"
+        )
+
+
+########## Processed Data ##########
+
+class NomadCrossChainTransaction(Base):
+    __tablename__ = "nomad_cross_chain_transactions"
+
+    id = Column(BigInteger, nullable=False, autoincrement=True, primary_key=True)
+    src_blockchain = Column(String(10), nullable=False)
+    src_transaction_hash = Column(String(66), nullable=False)
+    src_from_address = Column(String(42), nullable=False)
+    src_to_address = Column(String(42), nullable=False)
+    src_fee = Column(Numeric(30, 0), nullable=False)
+    src_fee_usd = Column(Float, nullable=True)
+    src_timestamp = Column(BigInteger, nullable=False)
+    dst_blockchain = Column(String(10), nullable=False)
+    dst_transaction_hash = Column(String(66), nullable=False)
+    dst_from_address = Column(String(42), nullable=False)
+    dst_to_address = Column(String(42), nullable=False)
+    dst_fee = Column(Numeric(30, 0), nullable=False)
+    dst_fee_usd = Column(Float, nullable=True)
+    dst_timestamp = Column(BigInteger, nullable=False)
+    deposit_hash = Column(String(66), nullable=False)
+    depositor = Column(String(42), nullable=False)
+    recipient = Column(String(42), nullable=False)
+    src_contract_address = Column(String(42), nullable=False)
+    dst_contract_address = Column(String(42), nullable=False)
+    amount = Column(Numeric(30, 0), nullable=False)
+    amount_usd = Column(Float, nullable=True)
+
+    def __init__(
+        self,
+        src_blockchain,
+        src_transaction_hash,
+        src_from_address,
+        src_to_address,
+        src_fee,
+        src_fee_usd,
+        src_timestamp,
+        dst_blockchain,
+        dst_transaction_hash,
+        dst_from_address,
+        dst_to_address,
+        dst_fee,
+        dst_fee_usd,
+        dst_timestamp,
+        deposit_hash,
+        depositor,
+        recipient,
+        src_contract_address,
+        dst_contract_address,
+        amount,
+        amount_usd,
+    ):
+        self.src_blockchain = src_blockchain
+        self.src_transaction_hash = src_transaction_hash
+        self.src_from_address = src_from_address
+        self.src_to_address = src_to_address
+        self.src_fee = src_fee
+        self.src_fee_usd = src_fee_usd
+        self.src_timestamp = src_timestamp
+        self.dst_blockchain = dst_blockchain
+        self.dst_transaction_hash = dst_transaction_hash
+        self.dst_from_address = dst_from_address
+        self.dst_to_address = dst_to_address
+        self.dst_fee = dst_fee
+        self.dst_fee_usd = dst_fee_usd
+        self.dst_timestamp = dst_timestamp
+        self.deposit_hash = deposit_hash
+        self.depositor = depositor
+        self.recipient = recipient
+        self.src_contract_address = src_contract_address
+        self.dst_contract_address = dst_contract_address
+        self.amount = amount
+        self.amount_usd = amount_usd

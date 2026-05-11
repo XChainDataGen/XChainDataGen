@@ -38,7 +38,7 @@ blockchains:
   - "https://arbitrum.gateway.tenderly.co"
   - "https://endpoints.omniatech.io/v1/arbitrum/one/public"
   - "https://arb-pokt.nodies.app"
-  - "https://arbitrum.meowrpc.com"   
+  - "https://arbitrum.meowrpc.com"
 
 - name: ethereum
   contract: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
@@ -70,7 +70,6 @@ blockchains:
   - "https://gnosis.drpc.org"
   - "https://gnosis-mainnet.public.blastapi.io"
   - "https://rpc.ap-southeast-1.gateway.fm/v4/gnosis/non-archival/mainnet"
-
 
 - name: optimism
   contract: "0x4200000000000000000000000000000000000006"
@@ -182,3 +181,16 @@ blockchains:
 - name: solana
   rpcs:
   - "https://svc.blockdaemon.com/solana/mainnet/native"
+
+- name: moonbeam
+  contract: "0x818ec0A7Fe18Ff94269904fCED6AE3DaE6d6dC0b"
+  topics:
+  - "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
+  start_block: "0x17A557"
+  end_block: "0x17A93F"
+  rpcs:
+  - "https://rpc.api.moonbeam.network"
+  - "https://moonbeam.api.onfinality.io/public"
+  - "https://moonbeam-rpc.n.dwellir.com/"
+  - "https://moonbeam.gateway.tenderly.co/"
+  - "https://moonbeam.unitedbloc.com"
