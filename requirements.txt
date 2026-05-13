@@ -32,7 +32,7 @@ fastjsonschema==2.21.1
 frozenlist==1.5.0
 hexbytes==1.2.1
 idna==3.10
-ipython==8.13.0
+ipython==8.13.1
 isort==5.13.2
 jedi==0.19.2
 Jinja2==3.1.6
@@ -76,7 +76,7 @@ pyzmq==26.2.0
 referencing==0.35.1
 regex==2024.11.6
 requests==2.32.4
-ruff==0.4.4
+ruff==0.5.3
 rlp==4.0.1
 rpds-py==0.22.3
 seaborn==0.13.2
@@ -100,4 +100,4 @@ webencodings==0.5.1
 websockets==13.1
 yarg==0.1.9
 yarl==1.18.3
-python-dotenv
+python-dotenv==1.2.2
