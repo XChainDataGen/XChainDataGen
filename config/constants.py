@@ -12,7 +12,7 @@ class Bridge(Enum):
     OMNIBRIDGE = "omnibridge"
     DEBRIDGE = "debridge"
     MAYAN = "mayan"
-
+    NOMAD = "nomad"
 
 BLOCKCHAIN_IDS = {
     "8453": {
@@ -78,6 +78,11 @@ BLOCKCHAIN_IDS = {
         "name": "solana",
         "native_token": "SOL",
     },
+    "1284": {
+        "name": "moonbeam",
+        "native_token": "WGLMR",
+        "native_token_contract": "0xAcc15dC74880C9944775448304B263D191c6077F"
+    }
 }
 
 # the list of blockchains supported by Alchemy to retrieve token
@@ -94,6 +99,7 @@ TOKEN_PRICING_SUPPORTED_BLOCKCHAINS = {
     "scroll": "scroll",
     "linea": "linea",
     "gnosis": "gnosis",
+    "moonbeam": "moonbeam"
 }
 
 
@@ -119,6 +125,7 @@ BRIDGE_NEEDS_TRANSACTION_BY_HASH_RPC_METHOD = {
     Bridge.OMNIBRIDGE: False,
     Bridge.DEBRIDGE: True,
     Bridge.MAYAN: True,
+    Bridge.NOMAD: False
 }
 
 RPCS_CONFIG_FILE = "config/rpcs_config.yaml"

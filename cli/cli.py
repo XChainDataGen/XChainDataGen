@@ -158,6 +158,7 @@ class Cli:
                 "ronin",
                 "solana",
                 "unichain",
+                "moonbeam",
             ],
             nargs="+",
             help="List of blockchains to extract data from",
