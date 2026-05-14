@@ -28,13 +28,14 @@ class EvmExtractor(Extractor):
         """Worker function for threads to process block ranges."""
         while not self.task_queue.empty():
             try:
-                contract, topics, start_block, end_block = self.task_queue.get()
+                contract, topics, start_block, end_block, metadata = self.task_queue.get()
 
                 self.work(
                     contract,
                     topics,
                     start_block,
                     end_block,
+                    metadata,
                 )
             except CustomException as e:
                 request_desc = (
@@ -51,6 +52,7 @@ class EvmExtractor(Extractor):
         topics: list,
         start_block: int,
         end_block: int,
+        metadata: dict | None = None,
     ):
         log_to_cli(
             build_log_message(
@@ -80,8 +82,12 @@ class EvmExtractor(Extractor):
             #  in the right DB table
             decoded_log["transaction_hash"] = log["transactionHash"]
             decoded_log["block_number"] = log["blockNumber"]
-            decoded_log["contract_address"] = contract
+            decoded_log["contract_address"] = log.get("address", contract)
+            decoded_log["log_index"] = log.get("logIndex")
+            decoded_log["topics_count"] = len(log["topics"])
             decoded_log["topic"] = log["topics"][0]
+            if metadata:
+                decoded_log.update(metadata)
             decoded_logs.append(decoded_log)
 
         included_logs = self.handler.handle_events(
@@ -145,18 +151,28 @@ class EvmExtractor(Extractor):
 
                 start_time = time.time()
                 topics = pair["topics"]
+                self.decoder.ensure_contract_registered(contract, self.blockchain, pair["abi"])
 
                 num_threads = self.rpc_client.max_threads_per_blockchain(self.blockchain) * 2
 
                 chunk_size = max(
-                    1, min((end_block - start_block + num_threads - 1) // num_threads, 1000)
+                    1,
+                    min(
+                        (end_block - start_block + num_threads - 1) // num_threads,
+                        1000,
+                    ),
                 )
 
                 block_ranges = self.divide_range(start_block, end_block - 1, chunk_size)
 
                 # Populate the task queue
+                metadata = {
+                    key: value
+                    for key, value in pair.items()
+                    if key not in {"abi", "contracts", "topics"}
+                }
                 for start, end in block_ranges:
-                    self.task_queue.put((contract, topics, start, end))
+                    self.task_queue.put((contract, topics, start, end, metadata))
 
                 # Create and start threads
                 log_to_cli(

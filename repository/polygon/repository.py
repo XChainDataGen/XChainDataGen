@@ -5,6 +5,7 @@ from repository.base import BaseRepository
 from .models import (
     PolygonBlockchainTransaction,
     PolygonBridgeWithdraw,
+    PolygonChildTokenBurn,
     PolygonCrossChainTransactions,
     PolygonExitedToken,
     PolygonLockedToken,
@@ -66,16 +67,49 @@ class PolygonExitedTokenRepository(BaseRepository):
     def __init__(self, session_factory):
         super().__init__(PolygonExitedToken, session_factory)
 
-    def event_exists(self, transaction_hash, exitor, deposit_receiver, root_token, amount):
+    def get_distinct_root_tokens(self):
+        with self.get_session() as session:
+            return [
+                root_token
+                for (root_token,) in session.query(PolygonExitedToken.root_token).distinct().all()
+            ]
+
+    def get_distinct_root_token_exitors(self):
+        with self.get_session() as session:
+            return (
+                session.query(
+                    PolygonExitedToken.root_token,
+                    PolygonExitedToken.exitor,
+                )
+                .distinct()
+                .all()
+            )
+
+    def event_exists(self, transaction_hash, exitor, root_token, amount):
         with self.get_session() as session:
             return (
                 session.query(PolygonExitedToken)
                 .filter(
                     PolygonExitedToken.transaction_hash == transaction_hash,
                     PolygonExitedToken.exitor == exitor,
-                    PolygonExitedToken.deposit_receiver == deposit_receiver,
                     PolygonExitedToken.root_token == root_token,
                     PolygonExitedToken.amount == amount,
+                )
+                .first()
+            )
+
+
+class PolygonChildTokenBurnRepository(BaseRepository):
+    def __init__(self, session_factory):
+        super().__init__(PolygonChildTokenBurn, session_factory)
+
+    def event_exists(self, transaction_hash, log_index):
+        with self.get_session() as session:
+            return (
+                session.query(PolygonChildTokenBurn)
+                .filter(
+                    PolygonChildTokenBurn.transaction_hash == transaction_hash,
+                    PolygonChildTokenBurn.log_index == log_index,
                 )
                 .first()
             )
@@ -263,6 +297,18 @@ Index(
     PolygonExitedToken.exitor,
     PolygonExitedToken.root_token,
     PolygonExitedToken.amount,
+)
+Index(
+    "ix_polygon_child_token_burn_unique_key",
+    PolygonChildTokenBurn.transaction_hash,
+    PolygonChildTokenBurn.log_index,
+    unique=True,
+)
+Index(
+    "ix_polygon_child_token_burn_match_key",
+    PolygonChildTokenBurn.root_token,
+    PolygonChildTokenBurn.from_address,
+    PolygonChildTokenBurn.amount,
 )
 Index("ix_polygon_new_deposit_block_deposit_block_id", PolygonNewDepositBlock.deposit_block_id)
 Index(

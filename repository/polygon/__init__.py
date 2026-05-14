@@ -1,6 +1,7 @@
 from .repository import (
     PolygonBlockchainTransactionRepository,
     PolygonBridgeWithdrawRepository,
+    PolygonChildTokenBurnRepository,
     PolygonCrossChainTransactionsRepository,
     PolygonExitedTokenRepository,
     PolygonLockedTokenRepository,
@@ -20,6 +21,7 @@ __all__ = [
     "PolygonNewDepositBlockRepository",
     "PolygonPOLWithdrawRepository",
     "PolygonBridgeWithdrawRepository",
+    "PolygonChildTokenBurnRepository",
     "PolygonTokenDepositedRepository",
     "PolygonBlockchainTransactionRepository",
     "PolygonCrossChainTransactionsRepository",

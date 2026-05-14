@@ -19,19 +19,45 @@ class EvmRPCClient(RPCClient):
         end_block: str,
     ) -> list:
         method = "eth_getLogs"
-        params = [
-            {
-                "fromBlock": hex(start_block),
-                "toBlock": hex(end_block),
-                "topics": [topics],
-                "address": contract,
-            }
-        ]
+        topic_filter = (
+            topics
+            if any(topic is None or isinstance(topic, list) for topic in topics)
+            else [topics]
+        )
+        log_filter = {
+            "fromBlock": hex(start_block),
+            "toBlock": hex(end_block),
+            "topics": topic_filter,
+            "address": contract,
+        }
+
+        params = [log_filter]
 
         rpc = self.get_next_rpc(blockchain)
         response = self.make_request(rpc, blockchain, method, params)
 
         return response["result"] if response else []
+
+    def eth_call(
+        self,
+        blockchain: str,
+        contract: str,
+        data: str,
+        block_number: str = "latest",
+    ) -> str:
+        method = "eth_call"
+        params = [
+            {
+                "to": contract,
+                "data": data,
+            },
+            block_number,
+        ]
+
+        rpc = self.get_next_rpc(blockchain)
+        response = self.make_request(rpc, blockchain, method, params)
+
+        return response["result"] if response else None
 
     def process_transaction(self, blockchain: str, tx_hash: str, block_number: str) -> dict:
         import concurrent.futures
@@ -113,8 +139,9 @@ class EvmRPCClient(RPCClient):
 
         return response["result"] if response else {}
 
-    def get_block(self, blockchain: str, block_number: str = "latest", 
-                  full_transactions: bool = True) -> dict:
+    def get_block(
+        self, blockchain: str, block_number: str = "latest", full_transactions: bool = True
+    ) -> dict:
         method = "eth_getBlockByNumber"
         params = [block_number, full_transactions]
 
