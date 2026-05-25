@@ -40,7 +40,7 @@ def test_extract_data():
     nomad_replica_process = NomadReplicaProcessRepository(DBSession)
     events = nomad_replica_process.get_all()
     print(f"Number of events in NomadReplicaProcess: {len(events)}")
-    assert len(events) == 57, "Expected events in NomadReplicaProcess table after extraction."
+    assert len(events) == 337, "Expected events in NomadReplicaProcess table after extraction."
 
     nomad_home_dispatch = NomadHomeDispatchRepository(DBSession)
     events = nomad_home_dispatch.get_all()
