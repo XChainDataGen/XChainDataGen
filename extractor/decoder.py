@@ -242,14 +242,23 @@ class BridgeDecoder:
         the problem is with the "bytes" type, which is not being decoded correctly
         the lines below are a workaround to fix this issue, in which we convert the "bytes"
         type to "bytes32" whenever there is an address in the name of the input
+        
+        Events excluded from this workaround have actual variable-length bytes fields,
+        whose names happen to include "address" (e.g. Poly Network LockEvent's "toAddress" field).
+        Applying bytes32 there reads the ABI offset incorrectly, causing the decoding to fail.
         """
-        for i in range(len(ordered_input_types)):
-            if ordered_input_types[i] == "bytes" and (
-                "address" in ordered_input_names[i].lower()
-                or ordered_input_names[i].lower() == "to"
-                or ordered_input_names[i].lower() == "from"
-            ):
-                ordered_input_types[i] = "bytes32"
+        EXCLUDED_SELECTORS = {
+            HexBytes("0x8636abd6d0e464fe725a13346c7ac779b73561c705506044a2e6b2cdb1295ea5"),
+            HexBytes("0x3aa1a37a3bb16943a2c97dd810c5601a4ce19bb1942a54401f821af5515c5530")
+        }
+        if selector not in EXCLUDED_SELECTORS:
+            for i in range(len(ordered_input_types)):
+                if ordered_input_types[i] == "bytes" and (
+                    "address" in ordered_input_names[i].lower()
+                    or ordered_input_names[i].lower() == "to"
+                    or ordered_input_names[i].lower() == "from"
+                ):
+                    ordered_input_types[i] = "bytes32"
 
         self.ordered_input_types_and_names[selector] = [
             ordered_input_names,

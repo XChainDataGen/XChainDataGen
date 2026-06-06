@@ -73,9 +73,9 @@ class BlockchainTransaction(Base):
     from_address = Column(String(44), nullable=True)
     to_address = Column(String(44), nullable=True)
     status = Column(Integer, nullable=False)
-    value = Column(Numeric(30, 0), nullable=True)
+    value = Column(Numeric(40, 0), nullable=True)
     input_data = Column(String(35000), nullable=True)
-    fee = Column(Numeric(30, 0), nullable=False)
+    fee = Column(Numeric(40, 0), nullable=False)
 
     def __init__(
         self,
