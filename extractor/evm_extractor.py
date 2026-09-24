@@ -82,6 +82,7 @@ class EvmExtractor(Extractor):
             decoded_log["block_number"] = log["blockNumber"]
             decoded_log["contract_address"] = contract
             decoded_log["topic"] = log["topics"][0]
+            decoded_log["log_index"] = log["logIndex"]
             decoded_logs.append(decoded_log)
 
         included_logs = self.handler.handle_events(

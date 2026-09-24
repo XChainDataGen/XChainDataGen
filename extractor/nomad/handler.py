@@ -135,13 +135,18 @@ class NomadHandler(BaseHandler):
             if dst_blockchain is None:
                 return None
 
-            if self.router_send_repo.event_exists(event["transaction_hash"]):
+            # Skip filling events if the transaction itself already exists
+            # in the main transaction repository (i.e. it was processed in an earlier run)
+            tx_hash = event["transaction_hash"]
+            log_index = int(event["log_index"], 16)
+            if self.router_send_repo.event_exists(blockchain, tx_hash, log_index):
                 return None
 
             self.router_send_repo.create(
                 {
                     "blockchain": blockchain,
-                    "transaction_hash": event["transaction_hash"],
+                    "transaction_hash": tx_hash,
+                    "log_index": log_index,
                     "input_token": event["token"],
                     "depositor": event["from"],
                     "dst_blockchain": dst_blockchain,
@@ -172,17 +177,30 @@ class NomadHandler(BaseHandler):
             if src_blockchain is None:
                 return None
 
-            if self.router_receive_repo.event_exists(nonce, blockchain, src_blockchain):
+            # Skip filling events if the transaction itself already exists
+            # in the main transaction repository (i.e. it was processed in an earlier run)
+            tx_hash = event["transaction_hash"]
+            log_index = int(event["log_index"], 16)
+            output_token = event["token"]
+            recipient = event["recipient"]
+            if self.router_receive_repo.event_exists(
+                blockchain, 
+                tx_hash, 
+                log_index, 
+                output_token, 
+                recipient
+            ):
                 return None
 
             self.router_receive_repo.create(
                 {
                     "blockchain": blockchain,
-                    "transaction_hash": event["transaction_hash"],
+                    "transaction_hash": tx_hash,
+                    "log_index": log_index,
                     "src_blockchain": src_blockchain,
                     "nonce": nonce,
-                    "output_token": event["token"],
-                    "recipient": event["recipient"],
+                    "output_token": output_token,
+                    "recipient": recipient,
                     "liquidity_provider": event["liquidityProvider"],
                     "amount": event["amount"],
                 }
@@ -199,14 +217,19 @@ class NomadHandler(BaseHandler):
         func_name = "handle_eth_helper_send"
 
         try:
-            if self.eth_helper_send_repo.event_exists(event["transaction_hash"]):
+            # Skip filling events if the transaction itself already exists
+            # in the main transaction repository (i.e. it was processed in an earlier run)
+            tx_hash = event["transaction_hash"]
+            log_index = int(event["log_index"], 16)
+            if self.eth_helper_send_repo.event_exists(blockchain, tx_hash, log_index):
                 return None
 
             self.eth_helper_send_repo.create(
                 {
                     "blockchain": blockchain,
-                    "transaction_hash": event["transaction_hash"],
+                    "transaction_hash": tx_hash,
                     "from_address": event["from"],
+                    "log_index": log_index
                 }
             )
             return event
@@ -221,15 +244,17 @@ class NomadHandler(BaseHandler):
         func_name = "handle_replica_process"
 
         try:
+            tx_hash = event["transaction_hash"]
+            log_index = int(event["log_index"], 16)
             message_hash = event["messageHash"]
-
-            if self.replica_process_repo.event_exists(message_hash, blockchain):
+            if self.replica_process_repo.event_exists(blockchain, tx_hash, log_index, message_hash):
                 return None
 
             self.replica_process_repo.create(
                 {
                     "blockchain": blockchain,
-                    "transaction_hash": event["transaction_hash"],
+                    "transaction_hash": tx_hash,
+                    "log_index": log_index,
                     "message_hash": message_hash,
                     "success": int(event["success"]),
                     "return_data": event["returnData"],
@@ -247,9 +272,10 @@ class NomadHandler(BaseHandler):
         func_name = "handle_home_dispatch"
 
         try:
-            message_hash = event["messageHash"]
+            tx_hash = event["transaction_hash"]
+            log_index = int(event["log_index"], 16)
 
-            if self.home_dispatch_repo.event_exists(message_hash, blockchain):
+            if self.home_dispatch_repo.event_exists(blockchain, tx_hash, log_index):
                 return None
 
             destination_and_nonce = int(event["destinationAndNonce"])
@@ -303,8 +329,9 @@ class NomadHandler(BaseHandler):
             self.home_dispatch_repo.create(
                 {
                     "blockchain": blockchain,
-                    "transaction_hash": event["transaction_hash"],
-                    "message_hash": message_hash,
+                    "transaction_hash": tx_hash,
+                    "log_index": log_index,
+                    "message_hash": event["messageHash"],
                     "leaf_index": event["leafIndex"],
                     "nonce": nonce,
                     "committed_root": event["committedRoot"],
