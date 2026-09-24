@@ -233,6 +233,24 @@ Click the green play button or press F5 to start debugging.
 
 The analysis of data extracted between Jun 1, 2024 and December 31, 2024 can be found in [./analysis/paper-visualizations-and-tables-generation.ipynb](./analysis/paper-visualizations-and-tables-generation.ipynb) and in [./analysis/R%20Scripts/paper-visualizations.R](./analysis/R%20Scripts/paper-visualizations.R).
 
+## Reproducing the Paper's Dataset
+
+The exact code revision used to generate the dataset and results reported in the paper is tagged [`v1.0-paper`](https://github.com/XChainDataGen/XChainDataGen/tree/v1.0-paper) (commit `cc80e02`). `main` has since gained functionality (Mayan Swift support, a Solana extractor, two rounds of Across schema changes) that postdates the paper's dataset -- use the tag, not `main`, if you are trying to reproduce the paper's numbers.
+
+### Restoring the provided dataset
+
+Rather than re-running extraction and generation from scratch, you can restore the SQL dump published on Zenodo directly into a fresh database:
+
+1. Download `jun2024-dec2024.zip` from [Zenodo](https://doi.org/10.5281/zenodo.15341722) and unzip it.
+2. With the `db` container running (`docker-compose up -d db`), restore the dump:
+
+    ```bash
+    # plain SQL dump:
+    psql -h localhost -U user -d db_app -f jun2024-dec2024.sql
+
+    # custom/directory-format dump:
+    pg_restore -h localhost -U user -d db_app --no-owner jun2024-dec2024.dump
+    ```
 
 ## Suggested Citation
 This work is an extension of our research. If using this repository, cite as:
