@@ -1,0 +1,19 @@
+\begin{table}[ht]
+\caption{Decomposition of \emph{user\_cost} into its constituent components, by protocol, computed on the full de-duplicated dataset ($\text{user\_cost} > 0$ only, i.e., excluding the negative-cost anomalies discussed in Section~\ref{section: l2-l2}). Percentages are the median per-transaction share of each component and, because medians are not additive across a skewed distribution, do not necessarily sum to 100\% row-wise. $\Delta$ = price-delta component (amount sent minus amount received, or input minus output amount).}
+\label{table:cost_decomposition}
+\begingroup
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{llrrrr}
+\toprule
+\textbf{Protocol} & \textbf{Formula} & \textbf{Gas} & \textbf{Protocol Fee} & \textbf{Price $\Delta$} & \textbf{Median Total} \\
+\midrule
+CCTP & gas only & \$0.0138 (100\%) & \$0.0000 (0\%) & \$0.0000 (0\%) & \$0.0138 \\
+CCIP & gas $+$ fee & \$0.0907 (9\%) & \$1.1263 (91\%) & \$0.0000 (0\%) & \$2.0612 \\
+Stargate Taxi & gas only & \$0.0099 (100\%) & \$0.0000 (0\%) & \$0.0000 (0\%) & \$0.0099 \\
+Stargate Bus & gas $+$ fare $+\Delta$ & \$0.0073 (10\%) & \$0.0280 (66\%) & \$0.0040 (10\%) & \$0.0700 \\
+Across & gas $+\Delta$ & \$0.0080 (15\%) & \$0.0000 (0\%) & \$0.0482 (85\%) & \$0.0742 \\
+\bottomrule
+\end{tabular}
+\endgroup
+\end{table}
