@@ -10,37 +10,11 @@ match_oft_transfers' join chain drops the most rows:
     -> has a dst_tx row for that oft_received.transaction_hash?
     -> has a matching executor_fee_paid / dvn_fee_paid row for oft_sent.transaction_hash?
 
-Read-only; uses temp tables scoped to this connection only.
+Read-only; uses the temp tables from _stargate_dedup.py.
 """
 
-from sqlalchemy import create_engine, text
-
-engine = create_engine("postgresql+psycopg2://admin:pwd@localhost:5432/stargate")
-
-SETUP = [
-    """
-    CREATE TEMP TABLE oft_received_dedup AS
-    SELECT DISTINCT ON (blockchain, transaction_hash, guid, amount_received_ld) *
-    FROM stargate_oft_received
-    ORDER BY blockchain, transaction_hash, guid, amount_received_ld, id;
-    """,
-    "CREATE INDEX ON oft_received_dedup (guid);",
-    "CREATE INDEX ON oft_received_dedup (transaction_hash);",
-    """
-    CREATE TEMP TABLE executor_fee_dedup AS
-    SELECT DISTINCT ON (blockchain, transaction_hash) * FROM stargate_executor_fee_paid
-    ORDER BY blockchain, transaction_hash, id;
-    """,
-    "CREATE INDEX ON executor_fee_dedup (transaction_hash);",
-    """
-    CREATE TEMP TABLE dvn_fee_dedup AS
-    SELECT DISTINCT ON (blockchain, transaction_hash) * FROM stargate_dvn_fee_paid
-    ORDER BY blockchain, transaction_hash, id;
-    """,
-    "CREATE INDEX ON dvn_fee_dedup (transaction_hash);",
-    "CREATE INDEX IF NOT EXISTS ix_bt_txhash "
-    "ON stargate_blockchain_transactions (transaction_hash);",
-]
+from _stargate_dedup import DEDUP_STATEMENTS, engine, run_statements
+from sqlalchemy import text
 
 FUNNEL_QUERY = """
 WITH sent AS (SELECT * FROM stargate_oft_sent),
@@ -124,9 +98,7 @@ with engine.connect() as conn:
     conn = conn.execution_options(isolation_level="AUTOCOMMIT")
 
     print("=== Setup ===")
-    for stmt in SETUP:
-        conn.execute(text(stmt))
-        print("  done:", stmt.strip().splitlines()[0][:80])
+    run_statements(conn, DEDUP_STATEMENTS)
 
     print("\n=== Funnel ===")
     row = conn.execute(text(FUNNEL_QUERY)).mappings().first()

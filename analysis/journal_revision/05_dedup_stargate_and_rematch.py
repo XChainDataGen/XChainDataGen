@@ -1,52 +1,15 @@
 """
-Deduplicate the Stargate raw event tables affected by the missing
-event_exists() guard (stargate_oft_received, stargate_executor_fee_paid,
-stargate_dvn_fee_paid -- see repository/stargate/repository.py and
-extractor/stargate/handler.py), then re-run the exact matching queries
-from generator/stargate/generator.py (match_oft_transfers,
-match_bus_transactions) against the de-duplicated data to get corrected
-Taxi/Bus matched counts.
-
-Unlike the first version of this script (which used bare CTEs and never
-finished after 6+ hours -- Postgres can't index a CTE's output, so every
-downstream join over tens of millions of rows fell back to slow plans),
-this version materializes each de-duplicated table into an indexed TEMP
-TABLE first. Everything happens inside one transaction-scoped connection
-so the temp tables are visible to the later queries; nothing is written
-to the permanent database.
+Re-run the exact matching queries from generator/stargate/generator.py (match_oft_transfers,
+match_bus_transactions) against de-duplicated Stargate event tables (see _stargate_dedup.py)
+to get corrected Taxi/Bus matched counts, and compare them to the current (inflated) counts.
 """
 
 import time
 
-from sqlalchemy import create_engine, text
+from _stargate_dedup import DEDUP_STATEMENTS, engine, run_statements
+from sqlalchemy import text
 
-engine = create_engine("postgresql+psycopg2://admin:pwd@localhost:5432/stargate")
-
-SETUP_STATEMENTS = [
-    # --- de-duplicated, indexed temp tables ---
-    """
-    CREATE TEMP TABLE oft_received_dedup AS
-    SELECT DISTINCT ON (blockchain, transaction_hash, guid, amount_received_ld) *
-    FROM stargate_oft_received
-    ORDER BY blockchain, transaction_hash, guid, amount_received_ld, id;
-    """,
-    "CREATE INDEX ON oft_received_dedup (guid);",
-    "CREATE INDEX ON oft_received_dedup (transaction_hash);",
-    """
-    CREATE TEMP TABLE executor_fee_dedup AS
-    SELECT DISTINCT ON (blockchain, transaction_hash) *
-    FROM stargate_executor_fee_paid
-    ORDER BY blockchain, transaction_hash, id;
-    """,
-    "CREATE INDEX ON executor_fee_dedup (transaction_hash);",
-    """
-    CREATE TEMP TABLE dvn_fee_dedup AS
-    SELECT DISTINCT ON (blockchain, transaction_hash) *
-    FROM stargate_dvn_fee_paid
-    ORDER BY blockchain, transaction_hash, id;
-    """,
-    "CREATE INDEX ON dvn_fee_dedup (transaction_hash);",
-    # --- helper views matching generator.py's ROW_NUMBER CTEs, materialized too ---
+EXTRA_STATEMENTS = [
     """
     CREATE TEMP TABLE bus_rode_indexed AS
     SELECT *, ROW_NUMBER() OVER (PARTITION BY transaction_hash) AS event_index
@@ -143,10 +106,7 @@ with engine.connect() as conn:
     conn = conn.execution_options(isolation_level="AUTOCOMMIT")
 
     print("=== Building de-duplicated, indexed temp tables ===")
-    for stmt in SETUP_STATEMENTS:
-        t0 = time.time()
-        conn.execute(text(stmt))
-        print(f"  [{time.time() - t0:6.1f}s] {stmt.strip().splitlines()[0][:80]}")
+    run_statements(conn, DEDUP_STATEMENTS + EXTRA_STATEMENTS)
 
     print("\n=== Raw / de-duplicated table sizes ===")
     results = {}

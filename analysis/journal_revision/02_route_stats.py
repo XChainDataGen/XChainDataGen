@@ -49,13 +49,6 @@ METRICS = ["latency", "user_cost"]
 N_BOOT = 10_000
 
 
-def rank_biserial(x, y):
-    """r = 1 - 2U/(n1*n2); positive r => x tends larger than y."""
-    n1, n2 = len(x), len(y)
-    U1, _ = mannwhitneyu(x, y, alternative="two-sided")
-    return 1 - (2 * U1) / (n1 * n2)
-
-
 def holm_bonferroni(pvals):
     order = np.argsort(pvals)
     m = len(pvals)
@@ -69,37 +62,28 @@ def holm_bonferroni(pvals):
     return adj
 
 
-def bootstrap_median_ci(x, n_boot=N_BOOT, alpha=0.05):
-    x = np.asarray(x)
-    boot_medians = np.empty(n_boot)
-    n = len(x)
-    for i in range(n_boot):
-        sample = np.random.choice(x, size=n, replace=True)
-        boot_medians[i] = np.median(sample)
-    lo, hi = np.percentile(boot_medians, [100 * alpha / 2, 100 * (1 - alpha / 2)])
-    return lo, hi
+def bootstrap_median_ci(x):
+    boot = np.empty(N_BOOT)
+    for i in range(N_BOOT):
+        boot[i] = np.median(np.random.choice(x, size=len(x), replace=True))
+    return np.percentile(boot, [2.5, 97.5])
 
 
 def effect_label(r):
-    ar = abs(r)
-    if ar >= 0.5:
-        return "large"
-    if ar >= 0.3:
-        return "medium"
-    if ar >= 0.1:
-        return "small"
+    for threshold, label in [(0.5, "large"), (0.3, "medium"), (0.1, "small")]:
+        if abs(r) >= threshold:
+            return label
     return "negligible"
 
 
-desc_rows = []
-kw_rows = []
-pairwise_rows = []
-ci_rows = []
+OUT = "../data/journal_revision"
+desc_rows, kw_rows, pairwise_rows, ci_rows = [], [], [], []
 
 for src, dst, direction in ROUTES:
     route_df = df[(df["src_blockchain"] == src) & (df["dst_blockchain"] == dst)]
 
     for metric in METRICS:
+        key = {"route": f"{src}->{dst}", "direction": direction, "metric": metric}
         groups = {}
         for bridge in BRIDGE_ORDER:
             vals = route_df.loc[route_df["bridge"] == bridge, metric].dropna().to_numpy()
@@ -110,9 +94,7 @@ for src, dst, direction in ROUTES:
             q1, q2, q3 = np.percentile(vals, [25, 50, 75])
             desc_rows.append(
                 {
-                    "route": f"{src}->{dst}",
-                    "direction": direction,
-                    "metric": metric,
+                    **key,
                     "bridge": bridge,
                     "n": len(vals),
                     "Q1": q1,
@@ -121,15 +103,12 @@ for src, dst, direction in ROUTES:
                     "IQR": q3 - q1,
                 }
             )
-
-            if bridge == "ccip" and len(vals) >= 5:
+            if bridge == "ccip":
                 lo, hi = bootstrap_median_ci(vals)
                 ci_rows.append(
                     {
-                        "route": f"{src}->{dst}",
-                        "direction": direction,
-                        "metric": metric,
-                        "bridge": "ccip",
+                        **key,
+                        "bridge": bridge,
                         "n": len(vals),
                         "median": q2,
                         "ci_lo": lo,
@@ -140,38 +119,27 @@ for src, dst, direction in ROUTES:
         if len(groups) < 2:
             continue
 
-        # Kruskal-Wallis across all bridges present on this route
         H, p_kw = kruskal(*groups.values())
         kw_rows.append(
             {
-                "route": f"{src}->{dst}",
-                "direction": direction,
-                "metric": metric,
+                **key,
                 "n_groups": len(groups),
-                "n_total": sum(len(v) for v in groups.values()),
+                "n_total": sum(map(len, groups.values())),
                 "H": H,
                 "p": p_kw,
             }
         )
 
-        # pairwise Mann-Whitney + Holm-Bonferroni + rank-biserial
-        pairs = list(itertools.combinations(groups.keys(), 2))
-        raw_p = []
-        pair_meta = []
-        for a, b in pairs:
-            _, p = mannwhitneyu(groups[a], groups[b], alternative="two-sided")
-            r = rank_biserial(groups[a], groups[b])
-            raw_p.append(p)
-            pair_meta.append((a, b, r))
-
-        adj_p = holm_bonferroni(np.array(raw_p))
-
-        for (a, b, r), p_raw, p_adj in zip(pair_meta, raw_p, adj_p, strict=True):
+        pairs = list(itertools.combinations(groups, 2))
+        results = [mannwhitneyu(groups[a], groups[b], alternative="two-sided") for a, b in pairs]
+        raw_p = np.array([res.pvalue for res in results])
+        adj_p = holm_bonferroni(raw_p)
+        for (a, b), res, p_raw, p_adj in zip(pairs, results, raw_p, adj_p, strict=True):
+            # rank-biserial r = 1 - 2U/(n1*n2); positive => a tends larger than b
+            r = 1 - 2 * res.statistic / (len(groups[a]) * len(groups[b]))
             pairwise_rows.append(
                 {
-                    "route": f"{src}->{dst}",
-                    "direction": direction,
-                    "metric": metric,
+                    **key,
                     "bridge_a": a,
                     "bridge_b": b,
                     "n_a": len(groups[a]),
@@ -184,37 +152,16 @@ for src, dst, direction in ROUTES:
                 }
             )
 
-desc_df = pd.DataFrame(desc_rows)
-kw_df = pd.DataFrame(kw_rows)
-pairwise_df = pd.DataFrame(pairwise_rows)
-ci_df = pd.DataFrame(ci_rows)
+outputs = {
+    "desc_stats": desc_rows,
+    "kruskal_wallis": kw_rows,
+    "pairwise_mannwhitney": pairwise_rows,
+    "ccip_bootstrap_ci": ci_rows,
+}
+for name, rows in outputs.items():
+    out_df = pd.DataFrame(rows)
+    out_df.to_csv(f"{OUT}/{name}.csv", index=False)
+    print(f"{name}: {len(out_df)} rows -> {OUT}/{name}.csv")
 
-desc_df.to_csv("../data/journal_revision/desc_stats.csv", index=False)
-kw_df.to_csv("../data/journal_revision/kruskal_wallis.csv", index=False)
-pairwise_df.to_csv("../data/journal_revision/pairwise_mannwhitney.csv", index=False)
-ci_df.to_csv("../data/journal_revision/ccip_bootstrap_ci.csv", index=False)
-
-pd.set_option("display.width", 200)
-pd.set_option("display.max_rows", 200)
-
-print("\n================ DESCRIPTIVE STATS ================")
-print(desc_df.to_string(index=False))
-
-print("\n================ KRUSKAL-WALLIS (per route, per metric) ================")
-print(kw_df.to_string(index=False))
-
-print("\n================ CCIP BOOTSTRAP 95% CI (median, 10,000 resamples) ================")
-print(ci_df.to_string(index=False))
-
-print(
-    "\n================ SIGNIFICANT PAIRWISE COMPARISONS "
-    "(Holm-Bonferroni p_adj < 0.05) ================"
-)
-pairwise_df["abs_r"] = pairwise_df["r"].abs()
-sig_df = pairwise_df[pairwise_df["sig"]].sort_values(
-    ["route", "metric", "abs_r"], ascending=[True, True, False]
-)
-sig_df = sig_df.drop(columns=["abs_r"])
-print(sig_df.to_string(index=False))
-
-print(f"\nTotal pairwise comparisons: {len(pairwise_df)}, significant: {pairwise_df['sig'].sum()}")
+pw = pd.DataFrame(pairwise_rows)
+print(f"Pairwise comparisons: {len(pw)}, significant after Holm-Bonferroni: {pw['sig'].sum()}")
