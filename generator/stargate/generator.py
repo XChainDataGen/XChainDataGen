@@ -613,9 +613,21 @@ class StargateGenerator(BaseGenerator):
                 NUlL as amount_usd
             FROM stargate_oft_sent oft_sent
             JOIN stargate_blockchain_transactions src_tx ON src_tx.transaction_hash = oft_sent.transaction_hash
-            JOIN stargate_executor_fee_paid executor_fee_paid ON executor_fee_paid.transaction_hash = oft_sent.transaction_hash
-            JOIN stargate_dvn_fee_paid dvn_fee_paid ON dvn_fee_paid.transaction_hash = oft_sent.transaction_hash
-            JOIN stargate_oft_received oft_received ON oft_received.guid = oft_sent.guid
+            JOIN (
+                SELECT transaction_hash, SUM(fee) AS fee
+                FROM (SELECT DISTINCT transaction_hash, fee FROM stargate_executor_fee_paid) distinct_fees
+                GROUP BY transaction_hash
+            ) executor_fee_paid ON executor_fee_paid.transaction_hash = oft_sent.transaction_hash
+            JOIN (
+                SELECT transaction_hash, SUM(fee) AS fee
+                FROM (SELECT DISTINCT transaction_hash, fee FROM stargate_dvn_fee_paid) distinct_fees
+                GROUP BY transaction_hash
+            ) dvn_fee_paid ON dvn_fee_paid.transaction_hash = oft_sent.transaction_hash
+            JOIN (
+                SELECT DISTINCT ON (blockchain, transaction_hash, guid, amount_received_ld) *
+                FROM stargate_oft_received
+                ORDER BY blockchain, transaction_hash, guid, amount_received_ld, id
+            ) oft_received ON oft_received.guid = oft_sent.guid
             JOIN stargate_blockchain_transactions dst_tx ON dst_tx.transaction_hash = oft_received.transaction_hash
             WHERE oft_sent.dst_blockchain = oft_received.blockchain
             AND oft_sent.blockchain = oft_received.src_blockchain;
@@ -752,8 +764,16 @@ class StargateGenerator(BaseGenerator):
                 oft_sent.amount_received_ld = oft_received.amount_received_ld * 1e12 OR
                 oft_sent.amount_received_ld * 1e12 = oft_received.amount_received_ld
             )
-            JOIN stargate_executor_fee_paid executor_fee_paid ON executor_fee_paid.transaction_hash = bus_driven.transaction_hash
-            JOIN stargate_dvn_fee_paid dvn_fee_paid ON dvn_fee_paid.transaction_hash = bus_driven.transaction_hash
+            JOIN (
+                SELECT transaction_hash, SUM(fee) AS fee
+                FROM (SELECT DISTINCT transaction_hash, fee FROM stargate_executor_fee_paid) distinct_fees
+                GROUP BY transaction_hash
+            ) executor_fee_paid ON executor_fee_paid.transaction_hash = bus_driven.transaction_hash
+            JOIN (
+                SELECT transaction_hash, SUM(fee) AS fee
+                FROM (SELECT DISTINCT transaction_hash, fee FROM stargate_dvn_fee_paid) distinct_fees
+                GROUP BY transaction_hash
+            ) dvn_fee_paid ON dvn_fee_paid.transaction_hash = bus_driven.transaction_hash
             JOIN stargate_blockchain_transactions dst_tx ON dst_tx.transaction_hash = oft_received.transaction_hash
             WHERE bus_rode.blockchain = oft_sent.blockchain
             AND bus_rode.blockchain = bus_driven.blockchain
