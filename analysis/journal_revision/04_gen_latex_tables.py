@@ -105,7 +105,7 @@ def make_ci_table(ci):
 PROTOCOL_FORMULA = {
     "cctp": "gas only",
     "ccip": "gas $+$ fee",
-    "stargate_oft": "gas only",
+    "stargate_oft": "gas $+$ fee",
     "stargate_bus": "gas $+$ fare $+\\Delta$",
     "across": "gas $+\\Delta$",
 }
@@ -138,7 +138,9 @@ def make_cost_decomposition_table(df):
         r"Section~\ref{section: l2-l2}). Percentages are the median per-transaction share "
         r"of each component and, because medians are not additive across a skewed "
         r"distribution, do not necessarily sum to 100\% row-wise. $\Delta$ = price-delta "
-        r"component (amount sent minus amount received, or input minus output amount)."
+        r"component (amount sent minus amount received, or input minus output amount). "
+        r"For Stargate Taxi, the protocol fee is the LayerZero messaging fee (executor $+$ DVN) "
+        r"that the sender pays together with the transaction."
     )
     return wrap_table(caption, "table:cost_decomposition", "scriptsize", 3, "llrrrr", header, body)
 

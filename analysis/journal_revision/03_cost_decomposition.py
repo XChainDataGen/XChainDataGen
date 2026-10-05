@@ -8,13 +8,19 @@ calculate_user_and_operator_cost_stargate_bus). This script reproduces
 that formula's components directly against
 analysis/data/grouped/all_ccc_protocols.csv:
 
-  CCTP, Stargate Taxi : user_cost = gas only
+  CCTP                : user_cost = gas only
+  Stargate Taxi       : user_cost = adjusted_src_fee_usd (gas)
+                                     + executor_fee_usd + dvn_fee_usd (LayerZero messaging fee)
   CCIP                : user_cost = gas + fee_token_amount_usd (flat fee)
   Stargate Bus        : user_cost = adjusted_user_fee_usd (gas)
                                      + bus_fare_usd (flat fare)
                                      + (amount_sent_ld_usd - amount_received_ld_usd) (price delta)
   Across               : user_cost = adjusted_src_fee_usd (gas)
                                      + (input_amount_usd - output_amount_usd) (price delta)
+
+The Taxi messaging fee is paid by the sender as msg.value with the send transaction, on top of gas.
+It is only part of user_cost (and Taxi cctxs are only counted once) when all_ccc_protocols.csv has
+been regenerated with the fixed generator/stargate/generator.py and generate_csv.ipynb.
 
 Negative-cost rows (the arbitrage/price-oracle anomalies discussed in
 Section 4.2.4 of the paper) are excluded, since a negative denominator
@@ -43,7 +49,9 @@ WITH dedup AS (
          TRY_CAST(amount_sent_ld_usd AS DOUBLE) AS amount_sent_ld_usd,
          TRY_CAST(amount_received_ld_usd AS DOUBLE) AS amount_received_ld_usd,
          TRY_CAST(input_amount_usd AS DOUBLE) AS input_amount_usd,
-         TRY_CAST(output_amount_usd AS DOUBLE) AS output_amount_usd
+         TRY_CAST(output_amount_usd AS DOUBLE) AS output_amount_usd,
+         TRY_CAST(executor_fee_usd AS DOUBLE) AS executor_fee_usd,
+         TRY_CAST(dvn_fee_usd AS DOUBLE) AS dvn_fee_usd
   FROM read_csv('../data/grouped/all_ccc_protocols.csv', all_varchar=true)
   WHERE bridge IN ('cctp','ccip','stargate_oft','stargate_bus','across')
 ),
@@ -54,6 +62,7 @@ components AS (
     CASE
       WHEN bridge='ccip' THEN COALESCE(fee_token_amount_usd,0)
       WHEN bridge='stargate_bus' THEN COALESCE(bus_fare_usd,0)
+      WHEN bridge='stargate_oft' THEN COALESCE(executor_fee_usd,0)+COALESCE(dvn_fee_usd,0)
       ELSE 0 END AS protocol_fee_usd,
     CASE
       WHEN bridge='across' THEN COALESCE(input_amount_usd,0)-COALESCE(output_amount_usd,0)
