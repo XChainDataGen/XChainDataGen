@@ -1,0 +1,199 @@
+\begin{table}[ht]
+\caption{Significant pairwise \textbf{latency} comparisons per exact source$\to$destination route (Mann-Whitney U, Holm-Bonferroni corrected, $\alpha=0.05$; computed on the de-duplicated dataset, cf.\ Section~\ref{sec: threats-valitidy}). $r$ = rank-biserial correlation (effect size).}
+\label{table:stats_pairwise_latency}
+\begingroup
+\tiny
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lllrrl}
+\toprule
+\textbf{Route} & \textbf{Protocol A} & \textbf{Protocol B} & $p_{\text{adj}}$ & $r$ & \textbf{Effect} \\
+\midrule
+Eth$\to$Avax & CCTP & S.OFT & $<$0.0001 & -0.995 & large \\
+Eth$\to$Avax & CCIP & S.OFT & $<$0.0001 & -0.995 & large \\
+Eth$\to$Avax & CCTP & S.Bus & $<$0.0001 & -0.995 & large \\
+Eth$\to$Avax & CCIP & S.Bus & $<$0.0001 & -0.993 & large \\
+Eth$\to$Avax & S.OFT & S.Bus & $<$0.0001 & 0.993 & large \\
+Eth$\to$Avax & CCTP & CCIP & 0.0065 & -0.152 & small \\
+\midrule
+Avax$\to$Eth & CCIP & S.Bus & $<$0.0001 & 0.996 & large \\
+Avax$\to$Eth & S.OFT & S.Bus & $<$0.0001 & 0.991 & large \\
+Avax$\to$Eth & CCTP & S.Bus & $<$0.0001 & 0.969 & large \\
+Avax$\to$Eth & CCTP & S.OFT & $<$0.0001 & 0.714 & large \\
+Avax$\to$Eth & CCTP & CCIP & $<$0.0001 & 0.664 & large \\
+\midrule
+Eth$\to$Base & CCTP & Across & $<$0.0001 & -0.999 & large \\
+Eth$\to$Base & CCIP & Across & $<$0.0001 & -0.998 & large \\
+Eth$\to$Base & S.Bus & Across & $<$0.0001 & -0.996 & large \\
+Eth$\to$Base & CCTP & S.OFT & $<$0.0001 & -0.990 & large \\
+Eth$\to$Base & CCIP & S.OFT & $<$0.0001 & -0.989 & large \\
+Eth$\to$Base & CCTP & S.Bus & $<$0.0001 & -0.986 & large \\
+Eth$\to$Base & S.OFT & S.Bus & $<$0.0001 & 0.986 & large \\
+Eth$\to$Base & CCIP & S.Bus & $<$0.0001 & -0.985 & large \\
+Eth$\to$Base & S.OFT & Across & $<$0.0001 & -0.981 & large \\
+\midrule
+Avax$\to$Base & S.OFT & S.Bus & $<$0.0001 & 0.986 & large \\
+Avax$\to$Base & CCIP & S.Bus & $<$0.0001 & 0.962 & large \\
+Avax$\to$Base & CCTP & S.Bus & $<$0.0001 & 0.923 & large \\
+Avax$\to$Base & CCIP & S.OFT & $<$0.0001 & -0.667 & large \\
+Avax$\to$Base & CCTP & CCIP & 0.0001 & 0.201 & small \\
+Avax$\to$Base & CCTP & S.OFT & $<$0.0001 & -0.113 & small \\
+\midrule
+Base$\to$Eth & CCTP & Across & $<$0.0001 & -0.999 & large \\
+Base$\to$Eth & CCIP & Across & $<$0.0001 & -0.999 & large \\
+Base$\to$Eth & S.Bus & Across & $<$0.0001 & -0.996 & large \\
+Base$\to$Eth & CCTP & S.OFT & $<$0.0001 & -0.986 & large \\
+Base$\to$Eth & CCIP & S.OFT & $<$0.0001 & -0.986 & large \\
+Base$\to$Eth & CCIP & S.Bus & $<$0.0001 & -0.984 & large \\
+Base$\to$Eth & S.OFT & Across & $<$0.0001 & -0.983 & large \\
+Base$\to$Eth & CCTP & S.Bus & $<$0.0001 & -0.979 & large \\
+Base$\to$Eth & S.OFT & S.Bus & $<$0.0001 & 0.932 & large \\
+Base$\to$Eth & CCTP & CCIP & $<$0.0001 & 0.267 & small \\
+\midrule
+Base$\to$Avax & CCTP & S.OFT & $<$0.0001 & -0.987 & large \\
+Base$\to$Avax & CCIP & S.OFT & $<$0.0001 & -0.987 & large \\
+Base$\to$Avax & CCTP & S.Bus & $<$0.0001 & -0.986 & large \\
+Base$\to$Avax & CCIP & S.Bus & $<$0.0001 & -0.985 & large \\
+Base$\to$Avax & S.OFT & S.Bus & $<$0.0001 & 0.980 & large \\
+Base$\to$Avax & CCTP & CCIP & 0.0309 & 0.072 & negligible \\
+\midrule
+Arb$\to$Base & CCTP & Across & $<$0.0001 & -0.999 & large \\
+Arb$\to$Base & CCIP & Across & $<$0.0001 & -0.999 & large \\
+Arb$\to$Base & CCIP & S.Bus & $<$0.0001 & -0.992 & large \\
+Arb$\to$Base & CCTP & S.Bus & $<$0.0001 & -0.992 & large \\
+Arb$\to$Base & S.Bus & Across & $<$0.0001 & -0.977 & large \\
+Arb$\to$Base & S.OFT & Across & $<$0.0001 & -0.960 & large \\
+Arb$\to$Base & CCTP & S.OFT & $<$0.0001 & -0.924 & large \\
+Arb$\to$Base & CCIP & S.OFT & $<$0.0001 & -0.924 & large \\
+Arb$\to$Base & S.OFT & S.Bus & $<$0.0001 & 0.810 & large \\
+\midrule
+Base$\to$Arb & CCIP & Across & $<$0.0001 & -1.000 & large \\
+Base$\to$Arb & CCTP & Across & $<$0.0001 & -1.000 & large \\
+Base$\to$Arb & CCTP & S.OFT & $<$0.0001 & -0.992 & large \\
+Base$\to$Arb & CCIP & S.OFT & $<$0.0001 & -0.992 & large \\
+Base$\to$Arb & CCTP & S.Bus & $<$0.0001 & -0.985 & large \\
+Base$\to$Arb & CCIP & S.Bus & $<$0.0001 & -0.985 & large \\
+Base$\to$Arb & S.OFT & S.Bus & $<$0.0001 & 0.967 & large \\
+Base$\to$Arb & S.Bus & Across & $<$0.0001 & -0.965 & large \\
+Base$\to$Arb & S.OFT & Across & $<$0.0001 & -0.930 & large \\
+Base$\to$Arb & CCTP & CCIP & 0.0014 & 0.095 & negligible \\
+\bottomrule
+\end{tabular}
+\endgroup
+\end{table}
+
+\begin{table}[ht]
+\caption{Significant pairwise \textbf{user cost} comparisons per exact source$\to$destination route (Mann-Whitney U, Holm-Bonferroni corrected, $\alpha=0.05$; computed on the de-duplicated dataset). $r$ = rank-biserial correlation (effect size).}
+\label{table:stats_pairwise_cost}
+\begingroup
+\tiny
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lllrrl}
+\toprule
+\textbf{Route} & \textbf{Protocol A} & \textbf{Protocol B} & $p_{\text{adj}}$ & $r$ & \textbf{Effect} \\
+\midrule
+Eth$\to$Avax & CCIP & S.Bus & $<$0.0001 & -0.674 & large \\
+Eth$\to$Avax & CCTP & CCIP & $<$0.0001 & 0.619 & large \\
+Eth$\to$Avax & CCIP & S.OFT & $<$0.0001 & -0.553 & large \\
+Eth$\to$Avax & S.OFT & S.Bus & $<$0.0001 & -0.219 & small \\
+Eth$\to$Avax & CCTP & S.OFT & $<$0.0001 & 0.139 & small \\
+Eth$\to$Avax & CCTP & S.Bus & 0.0196 & -0.075 & negligible \\
+\midrule
+Avax$\to$Eth & CCIP & S.OFT & $<$0.0001 & -1.000 & large \\
+Avax$\to$Eth & CCTP & CCIP & $<$0.0001 & 1.000 & large \\
+Avax$\to$Eth & S.OFT & S.Bus & $<$0.0001 & 0.990 & large \\
+Avax$\to$Eth & CCTP & S.Bus & $<$0.0001 & 0.979 & large \\
+Avax$\to$Eth & CCIP & S.Bus & $<$0.0001 & -0.741 & large \\
+Avax$\to$Eth & CCTP & S.OFT & $<$0.0001 & -0.138 & small \\
+\midrule
+Eth$\to$Base & CCIP & S.Bus & $<$0.0001 & -0.867 & large \\
+Eth$\to$Base & CCIP & Across & $<$0.0001 & -0.843 & large \\
+Eth$\to$Base & CCTP & CCIP & $<$0.0001 & 0.698 & large \\
+Eth$\to$Base & CCIP & S.OFT & $<$0.0001 & -0.626 & large \\
+Eth$\to$Base & S.OFT & S.Bus & $<$0.0001 & -0.403 & medium \\
+Eth$\to$Base & S.OFT & Across & $<$0.0001 & -0.276 & small \\
+Eth$\to$Base & CCTP & S.OFT & $<$0.0001 & 0.206 & small \\
+Eth$\to$Base & S.Bus & Across & $<$0.0001 & 0.180 & small \\
+Eth$\to$Base & CCTP & S.Bus & $<$0.0001 & -0.170 & small \\
+Eth$\to$Base & CCTP & Across & $<$0.0001 & -0.017 & negligible \\
+\midrule
+Avax$\to$Base & CCIP & S.OFT & $<$0.0001 & -0.974 & large \\
+Avax$\to$Base & CCTP & CCIP & $<$0.0001 & 0.929 & large \\
+Avax$\to$Base & CCIP & S.Bus & $<$0.0001 & -0.836 & large \\
+Avax$\to$Base & S.OFT & S.Bus & $<$0.0001 & 0.428 & medium \\
+Avax$\to$Base & CCTP & S.OFT & $<$0.0001 & -0.327 & medium \\
+Avax$\to$Base & CCTP & S.Bus & $<$0.0001 & 0.091 & negligible \\
+\midrule
+Base$\to$Eth & CCTP & CCIP & $<$0.0001 & 1.000 & large \\
+Base$\to$Eth & CCIP & S.OFT & $<$0.0001 & -1.000 & large \\
+Base$\to$Eth & CCTP & Across & $<$0.0001 & 1.000 & large \\
+Base$\to$Eth & S.OFT & Across & $<$0.0001 & 1.000 & large \\
+Base$\to$Eth & S.OFT & S.Bus & $<$0.0001 & 0.998 & large \\
+Base$\to$Eth & CCTP & S.Bus & $<$0.0001 & 0.998 & large \\
+Base$\to$Eth & CCIP & S.Bus & $<$0.0001 & -0.967 & large \\
+Base$\to$Eth & CCIP & Across & $<$0.0001 & -0.914 & large \\
+Base$\to$Eth & S.Bus & Across & $<$0.0001 & 0.640 & large \\
+Base$\to$Eth & CCTP & S.OFT & $<$0.0001 & 0.097 & negligible \\
+\midrule
+Base$\to$Avax & CCIP & S.OFT & $<$0.0001 & -1.000 & large \\
+Base$\to$Avax & CCTP & CCIP & $<$0.0001 & 1.000 & large \\
+Base$\to$Avax & S.OFT & S.Bus & $<$0.0001 & 0.987 & large \\
+Base$\to$Avax & CCTP & S.Bus & $<$0.0001 & 0.985 & large \\
+Base$\to$Avax & CCIP & S.Bus & $<$0.0001 & -0.810 & large \\
+Base$\to$Avax & CCTP & S.OFT & $<$0.0001 & -0.161 & small \\
+\midrule
+Arb$\to$Base & CCTP & CCIP & $<$0.0001 & 0.972 & large \\
+Arb$\to$Base & CCIP & S.Bus & $<$0.0001 & -0.967 & large \\
+Arb$\to$Base & CCIP & Across & $<$0.0001 & -0.931 & large \\
+Arb$\to$Base & CCIP & S.OFT & $<$0.0001 & -0.836 & large \\
+Arb$\to$Base & S.OFT & S.Bus & $<$0.0001 & 0.696 & large \\
+Arb$\to$Base & CCTP & S.OFT & $<$0.0001 & -0.561 & large \\
+Arb$\to$Base & S.OFT & Across & $<$0.0001 & 0.551 & large \\
+Arb$\to$Base & CCTP & S.Bus & $<$0.0001 & 0.345 & medium \\
+Arb$\to$Base & S.Bus & Across & $<$0.0001 & -0.321 & medium \\
+Arb$\to$Base & CCTP & Across & $<$0.0001 & -0.024 & negligible \\
+\midrule
+Base$\to$Arb & CCIP & S.OFT & $<$0.0001 & -0.999 & large \\
+Base$\to$Arb & CCTP & CCIP & $<$0.0001 & 0.997 & large \\
+Base$\to$Arb & CCIP & S.Bus & $<$0.0001 & -0.970 & large \\
+Base$\to$Arb & CCIP & Across & $<$0.0001 & -0.910 & large \\
+Base$\to$Arb & S.OFT & S.Bus & $<$0.0001 & 0.867 & large \\
+Base$\to$Arb & S.OFT & Across & $<$0.0001 & 0.847 & large \\
+Base$\to$Arb & CCTP & S.Bus & $<$0.0001 & 0.760 & large \\
+Base$\to$Arb & CCTP & Across & $<$0.0001 & 0.701 & large \\
+Base$\to$Arb & CCTP & S.OFT & $<$0.0001 & -0.386 & medium \\
+Base$\to$Arb & S.Bus & Across & $<$0.0001 & -0.009 & negligible \\
+\bottomrule
+\end{tabular}
+\endgroup
+\end{table}
+
+\begin{table}[ht]
+\caption{CCIP 95\% bootstrap confidence intervals for the median (10,000 resamples), per route.}
+\label{table:ccip_bootstrap_ci}
+\begingroup
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llrrrr}
+\toprule
+\textbf{Metric} & \textbf{Route} & $n$ & \textbf{Median} & \textbf{95\% CI Low} & \textbf{95\% CI High} \\
+\midrule
+Latency (s) & Eth$\to$Avax & 113 & 983.00 & 972.00 & 1016.00 \\
+Cost (\$) & Eth$\to$Avax & 113 & 14.87 & 13.66 & 15.95 \\
+Latency (s) & Avax$\to$Eth & 71 & 138.00 & 125.00 & 152.00 \\
+Cost (\$) & Avax$\to$Eth & 71 & 23.26 & 20.49 & 25.15 \\
+Latency (s) & Eth$\to$Base & 461 & 1060.00 & 1040.00 & 1080.00 \\
+Cost (\$) & Eth$\to$Base & 461 & 12.87 & 11.99 & 13.77 \\
+Latency (s) & Avax$\to$Base & 126 & 77.00 & 72.00 & 82.00 \\
+Cost (\$) & Avax$\to$Base & 126 & 2.11 & 1.97 & 2.17 \\
+Latency (s) & Base$\to$Eth & 353 & 1444.00 & 1426.00 & 1460.00 \\
+Cost (\$) & Base$\to$Eth & 353 & 26.64 & 25.26 & 27.85 \\
+Latency (s) & Base$\to$Avax & 308 & 1338.00 & 1319.49 & 1366.50 \\
+Cost (\$) & Base$\to$Avax & 308 & 2.38 & 2.36 & 2.39 \\
+Latency (s) & Arb$\to$Base & 450 & 1130.50 & 1113.00 & 1151.00 \\
+Cost (\$) & Arb$\to$Base & 450 & 0.44 & 0.42 & 0.48 \\
+Latency (s) & Base$\to$Arb & 379 & 1378.00 & 1352.00 & 1411.00 \\
+Cost (\$) & Base$\to$Arb & 379 & 0.45 & 0.41 & 0.49 \\
+\bottomrule
+\end{tabular}
+\endgroup
+\end{table}
